@@ -1,0 +1,61 @@
+<div
+    class="w-full bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl rounded-[32px] p-8 border border-emerald-200 dark:border-emerald-500/30 shadow-2xl shadow-emerald-900/5 animate-fade-in relative overflow-hidden group">
+    <!-- Abstract Decoration -->
+    <div
+        class="absolute top-0 right-0 w-40 h-40 bg-emerald-100/50 dark:bg-emerald-900/20 rounded-bl-full -mr-10 -mt-10 transition-colors">
+    </div>
+
+    <div class="flex items-center gap-4 mb-6 relative z-10">
+        <div
+            class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-500 rounded-full flex items-center justify-center text-xl shadow-inner">
+            <i class="fas fa-check-double"></i>
+        </div>
+        <div>
+            <h3 class="font-black text-xl text-slate-900 dark:text-white">Rute Berhasil Dibuat!</h3>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Memuat Hasil Rute AI</p>
+        </div>
+    </div>
+
+    <div
+        class="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 mb-6 text-slate-700 dark:text-slate-300 font-medium whitespace-pre-wrap leading-relaxed relative z-10 shadow-inner">
+        {{ content }}
+    </div>
+
+    <div class="relative z-10">
+        <h4 class="font-black text-sm text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+            <i class="fas fa-link text-slate-400"></i> Sumber Tautan
+        </h4>
+        <div class="flex flex-col gap-2">
+            {% for link in links %}
+            <a href="{{ link }}" target="_blank"
+                class="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:shadow-md transition-all text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                <i class="fas fa-external-link-alt opacity-50"></i>
+                <span class="truncate">{{ link }}</span>
+            </a>
+            {% else %}
+            <div
+                class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 text-sm font-medium text-slate-500 italic text-center">
+                Tidak ada tautan yang dilampirkan
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in 0.4s ease-out forwards;
+    }
+</style>

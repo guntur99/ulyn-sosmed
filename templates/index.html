@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ulyn AI - Smart Trip Planner</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Noto Sans JP"', '"Noto Sans KR"', '"Noto Sans SC"', '"Noto Sans Arabic"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 850: '#151F32', 950: '#020617' },
+                    },
+                    animation: {
+                        blob: "blob 7s infinite",
+                        float: "float 5s ease-in-out infinite",
+                    },
+                    keyframes: {
+                        blob: {
+                            "0%": { transform: "translate(0px, 0px) scale(1)" },
+                            "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+                            "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                            "100%": { transform: "translate(0px, 0px) scale(1)" }
+                        },
+                        float: {
+                            "0%, 100%": { transform: "translateY(0)" },
+                            "50%": { transform: "translateY(-10px)" }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .htmx-indicator {
+            display: none;
+        }
+
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+
+        .htmx-request.htmx-indicator {
+            display: inline-block;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-subtle {
+
+            0%,
+            100% {
+                opacity: 0.4;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(1.05);
+            }
+        }
+
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col overflow-x-hidden text-slate-900 dark:text-slate-100 selection:bg-indigo-100 dark:selection:bg-indigo-900 relative transition-colors duration-300">
+
+    <!-- Navbar -->
+    <nav
+        class="w-full bg-slate-50/80 backdrop-blur-md border-b border-slate-200/50 dark:bg-[#030712]/80 dark:border-slate-800/50 flex justify-between items-center py-4 px-6 md:px-8 sticky top-0 z-50 transition-colors">
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-[12px] bg-gradient-to-tr from-violet-600 via-rose-500 to-amber-500 shrink-0 p-[2px]">
+                <div
+                    class="w-full h-full bg-[#030712] rounded-[10px] flex items-center justify-center relative overflow-hidden">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i
+                            class="fas fa-route text-xl text-transparent bg-clip-text bg-gradient-to-tr from-violet-400 to-amber-300"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-xl font-black text-slate-900 dark:text-white leading-none tracking-tight">Ulyn
+                    AI</span>
+                <span class="text-[9px] font-black text-rose-500 tracking-widest mt-0.5 uppercase">AI TRIP
+                    PLANNER</span>
+            </div>
+        </a>
+
+        <!-- Right Side -->
+        <div class="flex items-center gap-3">
+            <button type="button" id="themeToggleBtn" onclick="toggleTheme()"
+                class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+            <div class="relative">
+                <button type="button" id="langToggleBtn" onclick="toggleLangDropdown()"
+                    class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
+                    <span id="activeLangFlag" class="text-sm">🇮🇩</span>
+                </button>
+                <!-- Language Dropdown -->
+                <div id="langDropdown"
+                    class="hidden absolute right-0 top-12 w-52 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-[200] py-1">
+                    <button onclick="setLanguage('id')" lang="id"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇮🇩</span> Indonesia
+                    </button>
+                    <button onclick="setLanguage('en')" lang="en"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇺🇸</span> English
+                    </button>
+                    <button onclick="setLanguage('ja')" lang="ja"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇯🇵</span> 日本語
+                    </button>
+                    <button onclick="setLanguage('ko')" lang="ko"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇰🇷</span> 한국어
+                    </button>
+                    <button onclick="setLanguage('zh')" lang="zh"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇨🇳</span> 中文
+                    </button>
+                    <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
+                    <button onclick="setLanguage('ru')" lang="ru"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇷🇺</span> Русский
+                    </button>
+                    <button onclick="setLanguage('nl')" lang="nl"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇳🇱</span> Nederlands
+                    </button>
+                    <button onclick="setLanguage('af')" lang="af"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇿🇦</span> Afrikaans
+                    </button>
+                    <button onclick="setLanguage('ar')" lang="ar"
+                        class="lang-option flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span class="text-lg">🇸🇦</span> العربية
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Animated Blobs -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
+        <div
+            class="absolute top-10 -left-20 md:left-[5%] w-72 h-72 md:w-[500px] md:h-[500px] bg-violet-400/20 dark:bg-violet-900/30 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl animate-blob">
+        </div>
+        <div class="absolute top-40 -right-20 md:right-[5%] w-72 h-72 md:w-[450px] md:h-[450px] bg-rose-400/20 dark:bg-rose-900/30 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl animate-blob"
+            style="animation-delay: 2s;"></div>
+        <div class="absolute -bottom-20 left-1/2 -translate-x-1/2 w-72 h-72 md:w-[600px] md:h-[600px] bg-amber-200/20 dark:bg-amber-900/20 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl animate-blob"
+            style="animation-delay: 4s;"></div>
+    </div>
+
+    <main class="flex-1 flex flex-col items-center py-10 relative w-full max-w-5xl mx-auto z-10 px-4 md:px-0 mt-12">
+
+        <!-- Header -->
+        <div class="w-full max-w-3xl text-center mb-12">
+            <h1
+                class="text-4xl md:text-6xl font-black tracking-tighter leading-tight mb-16 h-[50px] md:h-[72px] flex items-center justify-center">
+                <span id="typewriter"
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500"></span><span
+                    class="animate-pulse text-amber-500 font-light ml-1">|</span>
+            </h1>
+
+            <div class="flex flex-wrap items-center justify-center gap-4 mb-4 w-full max-w-3xl">
+                <button type="button" data-cat="0"
+                    onclick="fillPrompt('Bikinkan rute jalan-jalan santuy keliling kota hari ini...')"
+                    class="px-5 py-2.5 rounded-[20px] bg-violet-50 text-violet-600 font-bold text-sm tracking-wide shadow-sm border border-violet-100/50 flex items-center gap-2 hover:-translate-y-1 transition-transform">
+                    <i class="fas fa-map-marked-alt"></i> Jalan-jalan
+                </button>
+                <button type="button" data-cat="1"
+                    onclick="fillPrompt('Rekomendasi rute tempat jajan pinggir jalan yang viral dan asik...')"
+                    class="px-5 py-2.5 rounded-[20px] bg-rose-50 text-rose-600 font-bold text-sm tracking-wide shadow-sm border border-rose-100/50 flex items-center gap-2 hover:-translate-y-1 transition-transform">
+                    <i class="fas fa-utensils"></i> Jajan
+                </button>
+                <button type="button" data-cat="2"
+                    onclick="fillPrompt('Cari rute tempat shopping dan barang lucu yang murah meriah...')"
+                    class="px-5 py-2.5 rounded-[20px] bg-amber-50/80 text-amber-700 font-bold text-sm tracking-wide shadow-sm border border-amber-100/50 flex items-center gap-2 hover:-translate-y-1 transition-transform">
+                    <i class="fas fa-shopping-bag"></i> Shopping
+                </button>
+                <button type="button" data-cat="3"
+                    onclick="fillPrompt('Cari cafe asik buat nongkrong, wifi kenceng, colokan banyak...')"
+                    class="px-5 py-2.5 rounded-[20px] bg-[#fdf8f0] text-[#8b5a2b] font-bold text-sm tracking-wide shadow-sm border border-[#f5ebdb] flex items-center gap-2 hover:-translate-y-1 transition-transform">
+                    <i class="fas fa-coffee"></i> Nongkrong
+                </button>
+                <button type="button" data-cat="4"
+                    onclick="fillPrompt('Rekomendasi destinasi healing yang sejuk pemandangannya bagus...')"
+                    class="px-5 py-2.5 rounded-[20px] bg-emerald-50 text-emerald-600 font-bold text-sm tracking-wide shadow-sm border border-emerald-100/50 flex items-center gap-2 hover:-translate-y-1 transition-transform">
+                    <i class="fas fa-leaf"></i> Healing
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Form Container -->
+        <form id="promptForm" hx-post="/api/generate" hx-indicator="#loadingBtn"
+            class="w-full max-w-3xl bg-white dark:bg-slate-800 rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-700/60 transition-all focus-within:ring-4 focus-within:ring-slate-100 dark:focus-within:ring-slate-800 overflow-hidden mb-12">
+
+            <!-- Top Controls -->
+            <div
+                class="px-6 pt-6 pb-2 md:px-8 md:pt-8 md:pb-4 flex flex-col md:flex-row justify-between items-center border-b border-slate-50 dark:border-slate-700/50 gap-4">
+                <button type="button" onclick="openFeaturesModal()"
+                    class="flex items-center gap-4 bg-slate-50/80 dark:bg-slate-900/50 px-4 py-2 rounded-full border border-slate-100 dark:border-slate-700 w-full md:w-auto overflow-hidden hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left focus:outline-none">
+                    <div class="flex -space-x-2 shrink-0">
+                        <div
+                            class="w-6 h-6 rounded-full bg-violet-400 text-white flex items-center justify-center text-[10px] shadow-sm">
+                            <i class="fas fa-percent"></i>
+                        </div>
+                        <div
+                            class="w-6 h-6 rounded-full bg-emerald-400 text-white flex items-center justify-center text-[10px] shadow-sm relative z-10">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div
+                            class="w-6 h-6 rounded-full bg-blue-400 text-white flex items-center justify-center text-[10px] shadow-sm relative z-20">
+                            <i class="fas fa-route"></i>
+                        </div>
+                    </div>
+                    <span
+                        class="text-xs font-black text-slate-800 dark:text-white tracking-wider shrink-0 hidden sm:inline-block"
+                        data-i18n="exploreFeatures">EKSPLOR
+                        FITUR</span>
+                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-600 shrink-0 hidden sm:block"></div>
+                    <span class="text-xs font-medium text-slate-400 truncate" data-i18n="featuresSub">Cuaca, Budget &
+                        Rute AI...</span>
+                </button>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" id="textModeBtn" onclick="toggleInputMode('text')"
+                        class="hidden flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm rounded-full text-xs font-black text-slate-700 dark:text-white hover:bg-slate-100 transition-colors">
+                        <i class="fas fa-align-left text-indigo-500"></i> <span data-i18n="textMode">PROMPT TEXT</span>
+                    </button>
+                    <button type="button" id="socialModeBtn" onclick="toggleInputMode('social')"
+                        class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-full text-xs font-black text-slate-700 dark:text-white hover:border-rose-400 transition-colors relative">
+                        <i class="fab fa-tiktok text-rose-500"></i> <span data-i18n="socialLink">SOCIAL LINK</span>
+                        <div id="linkCountBadge"
+                            class="hidden absolute -top-2 -right-2 w-5 h-5 bg-rose-500 text-white text-[9px] items-center justify-center rounded-full border-2 border-white dark:border-slate-800 shadow-md">
+                            0</div>
+                    </button>
+                    <button type="button" id="vibeBtn" onclick="openVibeModal()"
+                        class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-full text-xs font-black text-slate-700 dark:text-white hover:bg-slate-50 transition-colors">
+                        <i class="fas fa-bolt text-rose-500"></i> Gen-Z(W) <i
+                            class="fas fa-chevron-down text-slate-400 text-[10px] ml-1"></i>
+                    </button>
+                    <button type="button" onclick="openQuotaModal()"
+                        class="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/30 hover:scale-110 active:scale-95 transition-transform">
+                        <i class="fas fa-crown text-[10px]"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Input Area Container -->
+            <div id="inputAreaContainer" class="min-h-[280px] flex items-center justify-center">
+                <!-- Text Mode: Textarea -->
+                <div id="textInputArea" class="w-full relative">
+                    <textarea name="prompt" id="promptInput" rows="3" required
+                        class="w-full px-6 py-4 md:px-8 md:py-6 text-2xl md:text-3xl text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 bg-transparent border-none outline-none resize-none font-medium min-h-[240px]"
+                        placeholder="Cari cafe di Bandung yang asik buat nugas..."></textarea>
+                </div>
+
+                <!-- Social Mode: Onboarding View -->
+                <div id="socialInputArea"
+                    class="hidden w-full px-6 py-8 md:px-8 md:py-10 flex flex-col items-center justify-center text-center">
+                    <div
+                        class="w-16 h-16 rounded-[24px] bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-6 shadow-sm border border-rose-100/50 dark:border-rose-800/30">
+                        <i class="fas fa-link text-2xl text-rose-500"></i>
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white mb-2"
+                        data-i18n="socialRouteTitle">Rute dari Social Media</h3>
+                    <p class="text-xs md:text-sm text-slate-400 dark:text-slate-500 max-w-sm mb-6 leading-relaxed"
+                        data-i18n="socialRouteDesc">Tempel link Reels atau TikTok untuk harvesting destinasi otomatis.
+                    </p>
+
+                    <div class="relative group">
+                        <button type="button" onclick="openSocialLinksModal()"
+                            class="flex items-center gap-3 px-8 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md rounded-[20px] text-sm font-black text-slate-700 dark:text-white hover:border-rose-400 hover:-translate-y-1 transition-all active:scale-95">
+                            <i class="fab fa-tiktok text-lg text-rose-500"></i>
+                            <span data-i18n="inputAddLinkBtn">Input / Tambah Link</span>
+                        </button>
+                        <div id="socialLinkBadgeMain"
+                            class="hidden absolute -top-3 -right-3 w-7 h-7 bg-rose-500 text-white text-[11px] font-black flex items-center justify-center rounded-full border-[3px] border-white dark:border-slate-800 shadow-xl z-10 transition-transform scale-0 group-hover:scale-110">
+                            0</div>
+                    </div>
+
+                    <div id="socialAddedLinksView" class="mt-8 w-full max-w-md flex flex-col gap-3"></div>
+                </div>
+            </div>
+
+            <input type="hidden" name="vibe" id="vibeInput" value="Gen-Z(W)">
+            <input type="hidden" name="vibe_trait" id="vibeTraitInput" value="">
+            <input type="hidden" name="lat" id="latInput">
+            <input type="hidden" name="lng" id="lngInput">
+
+            <div id="socialLinksContainer" class="px-6 flex flex-wrap gap-2 pb-2"></div>
+
+            <!-- Footer Action -->
+            <div
+                class="bg-slate-50/50 dark:bg-slate-900/50 px-6 py-4 md:px-8 md:py-6 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-50 dark:border-slate-800/80">
+                <button type="button" id="locationBtn"
+                    class="flex items-center w-full md:w-auto justify-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 rounded-full font-bold text-xs tracking-widest uppercase border border-emerald-100 dark:border-emerald-800/30 shadow-sm transition-all">
+                    <i class="fas fa-map-marked-alt text-sm"></i>
+                    <div id="locationDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span id="locationText" data-i18n="locationLocked">MENCARI LOKASI...</span>
+                </button>
+
+                <div class="flex items-center w-full md:w-auto justify-center gap-4">
+                    <button type="button" id="micBtn" onclick="toggleVoiceInput()"
+                        class="w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl flex items-center justify-center transition-all shadow-sm shrink-0 relative">
+                        <i id="micIcon" class="fas fa-microphone"></i>
+                        <span id="micRipple"
+                            class="hidden absolute inset-0 rounded-2xl animate-ping bg-rose-500/30"></span>
+                    </button>
+                    <button type="submit" id="submitBtn" disabled
+                        class="bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 px-8 py-3.5 md:px-10 rounded-2xl font-black text-sm tracking-[0.1em] shadow-sm transition-all flex items-center justify-center gap-3 w-full md:w-auto uppercase cursor-not-allowed opacity-60">
+                        <span id="btnText" data-i18n="buildRoute">Buat Rute AI</span>
+                        <i id="normalIcon" class="fas fa-wand-magic-sparkles"></i>
+                        <i id="loadingBtn" class="fas fa-circle-notch fa-spin htmx-indicator"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- History Section -->
+        {% if history.len() > 0 %}
+        <div class="w-full max-w-3xl mb-12">
+            <div class="flex items-center justify-between mb-6 px-2">
+                <div class="flex flex-col">
+                    <h2 class="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase"
+                        data-i18n="historyTitle">Riwayat Rute Kamu</h2>
+                    <p class="text-[10px] font-bold text-rose-500 tracking-[0.2em] uppercase" data-i18n="historySub">
+                        Recent Itineraries</p>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400">
+                    <i class="fas fa-history"></i>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                {% for entry in history %}
+                <a href="/route/{{ entry.id }}"
+                    class="group flex items-center gap-4 p-5 bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center shrink-0 border border-slate-100 dark:border-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-colors">
+                        <span class="text-lg font-black text-slate-900 dark:text-white leading-none">{{ entry.step_count
+                            }}</span>
+                        <span
+                            class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Steps</span>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <h3
+                            class="text-base font-black text-slate-800 dark:text-white mb-0.5 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                            {{ entry.title }}</h3>
+                        <div
+                            class="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <span class="flex items-center gap-1"><i
+                                    class="fas fa-map-pin text-rose-500 text-[8px]"></i> {{
+                                entry.first_location.as_deref().unwrap_or("Unknown") }}</span>
+                            <span class="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700"></span>
+                            <span>{{ entry.created_at.format("%d %b %Y") }}</span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-300 group-hover:bg-indigo-600 group-hover:text-white transition-all transform group-hover:rotate-45">
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Result Section -->
+        <div id="result" class="w-full max-w-3xl mb-12 hidden">
+            <!-- Now redirecting to map page -->
+        </div>
+
+        <!-- Pricing Section -->
+        <div id="pricingSection" class="w-full max-w-4xl z-10 mb-10 pt-10">
+            <div class="text-center mb-8">
+                <p data-i18n="upgradeKuota"
+                    class="text-[10px] md:text-xs font-black text-violet-500 dark:text-violet-400 uppercase tracking-[0.2em] mb-2">
+                    Upgrade Kuota</p>
+                <h2 data-i18n="pilihPaket" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">Pilih
+                    Paket Premium</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 md:px-0">
+                <!-- Basic Pass -->
+                <button hx-post="/api/checkout" hx-vals='{"tier": "basic_pass", "amount": 15000}'
+                    class="text-left bg-white/70 dark:bg-slate-800/60 backdrop-blur-md p-8 rounded-[32px] border border-white dark:border-slate-700 shadow-xl shadow-indigo-900/5 dark:shadow-none hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-400 transition-all duration-300 relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-bl-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-colors">
+                    </div>
+                    <div
+                        class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-500 rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10 shadow-sm border border-indigo-100 dark:border-indigo-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <h3 class="font-black text-slate-900 dark:text-white text-2xl mb-1">Basic Pass</h3>
+                    <p class="text-xl font-bold text-indigo-500 dark:text-indigo-400 mb-4">Rp 15.000</p>
+                    <p data-i18n="basicDesc" class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-6">Cocok
+                        untuk kebutuhan personal sesekali. Dapatkan 10x Generate rute &amp; itinerary keren.</p>
+                    <div
+                        class="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-500 transition-colors flex items-center gap-2">
+                        <span data-i18n="topupBtn">Topup Sekarang</span> <i class="fas fa-arrow-right"></i>
+                    </div>
+                </button>
+
+                <!-- Pro Pass -->
+                <button hx-post="/api/checkout" hx-vals='{"tier": "pro_pass", "amount": 49000}'
+                    class="text-left bg-gradient-to-br from-rose-500 to-amber-500 p-8 rounded-[32px] border border-white/20 shadow-xl shadow-rose-900/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-rose-500/30 transition-all duration-300 relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-4 bg-white/20 backdrop-blur-sm text-white text-[10px] font-black px-4 py-2 rounded-b-xl uppercase tracking-widest border-x border-b border-white/20">
+                        <span data-i18n="bestValue">Best Value</span>
+                    </div>
+
+                    <div
+                        class="w-16 h-16 bg-white/20 backdrop-blur-md text-white rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10 shadow-sm border border-white/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="font-black text-white text-2xl mb-1">Pro Pass</h3>
+                    <p class="text-xl font-bold text-rose-100 mb-4">Rp 49.000</p>
+                    <p data-i18n="proDesc" class="text-sm text-rose-50/90 font-medium mb-6">Akses tanpa batas untuk para
+                        traveler. Bebas limit rute dan prioritas AI antrian.</p>
+                    <div class="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                        <span data-i18n="joinProBtn">Join Pro Sekarang</span> <i class="fas fa-arrow-right"></i>
+                    </div>
+                </button>
+            </div>
+
+            <p
+                class="text-[10px] font-bold text-center text-slate-400 dark:text-slate-500 mt-8 tracking-widest uppercase">
+                <i class="fas fa-lock text-slate-300 dark:text-slate-600 mr-1"></i> <span
+                    data-i18n="securePayment">Pembayaran Aman oleh Mayar.id</span>
+            </p>
+        </div>
+
+    </main>
+
+    <!-- Social Links Modal -->
+    <div id="socialLinksModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeSocialLinksModal()"></div>
+        <div
+            class="relative z-10 w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-200/50 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <h3 data-i18n="modalSocialTitle" class="text-xl font-black text-slate-900 dark:text-white italic">Paste
+                    Social Links</h3>
+                <button type="button" onclick="closeSocialLinksModal()"
+                    class="text-slate-400 hover:text-rose-500 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-8 overflow-y-auto custom-scrollbar" id="socialLinksList">
+                <div class="space-y-4" id="linkInputsWrapper">
+                    <div class="link-input-item group relative">
+                        <div
+                            class="relative flex items-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 focus-within:border-rose-500/50 transition-all">
+                            <div class="pl-4 flex gap-1.5 opacity-40">
+                                <i class="fab fa-tiktok text-sm"></i>
+                                <i class="fab fa-instagram text-sm"></i>
+                            </div>
+                            <input type="url" data-i18n-placeholder="socialPlaceholder"
+                                class="social-link-field w-full px-4 py-4 bg-transparent outline-none text-sm font-medium text-slate-800 dark:text-slate-200"
+                                placeholder="Paste link video di sini...">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="addLinkInput()" id="addLinkBtn"
+                    class="mt-6 w-full py-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl text-slate-400 dark:text-slate-500 font-black text-xs uppercase tracking-widest hover:border-indigo-500 hover:text-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fas fa-plus-circle"></i> <span data-i18n="addLinkBtnText">Tambah Link Lain</span>
+                </button>
+            </div>
+
+            <div class="px-8 py-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onclick="saveSocialLinks()" id="saveLinksBtn"
+                    class="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all text-center">
+                    <span data-i18n="saveLinksBtnText">Simpan & Lanjutkan</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Modal -->
+    <div id="featuresModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeFeaturesModal()"></div>
+        <div
+            class="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-200/50 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
+            <div
+                class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+                <h3 data-i18n="modalFeaturesTitle"
+                    class="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2"><i
+                        class="fas fa-sparkles text-amber-500"></i> Eksplor Fitur AI Kami</h3>
+                <button type="button" onclick="closeFeaturesModal()"
+                    class="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-8 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Rute by Prompting -->
+                <div class="flex gap-4 items-start group">
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-violet-100 dark:bg-violet-900/30 text-violet-500 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-keyboard"></i>
+                    </div>
+                    <div>
+                        <h4 data-i18n="feature1Title" class="font-bold text-slate-800 dark:text-white text-base mb-1">
+                            Buat Rute by Prompting</h4>
+                        <p data-i18n="feature1Desc"
+                            class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Tulis aja
+                            maunya apa, AI langsung racikin rute jalan-jalannya lengkap dengan tempat hits!</p>
+                    </div>
+                </div>
+                <!-- Voice -->
+                <div class="flex gap-4 items-start group">
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/30 text-rose-500 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <div>
+                        <h4 data-i18n="feature2Title" class="font-bold text-slate-800 dark:text-white text-base mb-1">
+                            Voice Prompt</h4>
+                        <p data-i18n="feature2Desc"
+                            class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Lagi males
+                            ngetik? Ngomong aja dan AI bakal terjemahin suaramu jadi rute seru secara real-time.</p>
+                    </div>
+                </div>
+                <!-- Social Link -->
+                <div class="flex gap-4 items-start group">
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-sky-100 dark:bg-sky-900/30 text-sky-500 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div>
+                        <h4 data-i18n="feature3Title" class="font-bold text-slate-800 dark:text-white text-base mb-1">
+                            Ekstrak dari Social Link
+                        </h4>
+                        <p data-i18n="feature3Desc"
+                            class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Ada video
+                            viral di TikTok atau IG? Paste link-nya, biar AI ekstrak lokasi-lokasinya otomatis.</p>
+                    </div>
+                </div>
+                <!-- Viral Caption -->
+                <div class="flex gap-4 items-start group">
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-500 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-hashtag"></i>
+                    </div>
+                    <div>
+                        <h4 data-i18n="feature4Title" class="font-bold text-slate-800 dark:text-white text-base mb-1">
+                            Bikin Viral Caption</h4>
+                        <p data-i18n="feature4Desc"
+                            class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Dapetin saran
+                            caption ala selebgram buat disebarin waktu pamerin rute perjalananmu.</p>
+                    </div>
+                </div>
+                <!-- Visual Receipt -->
+                <div class="flex gap-4 items-start group">
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div>
+                        <h4 data-i18n="feature5Title" class="font-bold text-slate-800 dark:text-white text-base mb-1">
+                            Visual Receipt</h4>
+                        <p data-i18n="feature5Desc"
+                            class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Lihat
+                            breakdown budget otomatis buat rute, jajan, atau tiket wisata versi receipt estetik!</p>
+                    </div>
+                </div>
+                <!-- Persona Pemandu -->
+                <div class="flex gap-4 items-start group">
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-900/30 text-orange-500 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-user-astronaut"></i>
+                    </div>
+                    <div>
+                        <h4 data-i18n="feature6Title" class="font-bold text-slate-800 dark:text-white text-base mb-1">
+                            Persona Pemandu</h4>
+                        <p data-i18n="feature6Desc"
+                            class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Bisa pilih AI
+                            mau ngomong kayak Gen-Z santuy, pro tour guide, atau sok puitis ala senja.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="px-8 py-6 border-t border-slate-100 dark:border-slate-800 flex justify-center bg-slate-50/50 dark:bg-slate-900/50">
+                <button type="button" onclick="closeFeaturesModal()"
+                    class="w-full max-w-xs py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-lg hover:scale-105 active:scale-95 transition-all text-center">
+                    <span data-i18n="closeFeaturesBtnText">Tutup Eksplorasi</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quota Modal -->
+    <div id="quotaModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeQuotaModal()"></div>
+        <div class="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-8 border border-slate-200 dark:border-slate-800 scale-95 opacity-0 transition-all duration-300"
+            id="quotaModalContent">
+
+            <div class="text-center mb-8 relative">
+                <div
+                    class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-full blur-3xl pointer-events-none">
+                </div>
+
+                <h4 data-i18n="modalQuotaLabel"
+                    class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-6 relative z-10">
+                    Sisa Kuota Utama Kamu</h4>
+
+                <!-- Main KPI -->
+                <div class="flex justify-center items-center gap-8 md:gap-12 relative z-10">
+                    <div class="text-center">
+                        <p data-i18n="statGenerateRoute"
+                            class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">
+                            Generate Rute</p>
+                        <p class="text-4xl font-black text-slate-900 dark:text-white">5</p>
+                    </div>
+                    <div class="w-px h-12 bg-slate-200 dark:bg-slate-700"></div>
+                    <div class="text-center">
+                        <p data-i18n="statSocialLinks"
+                            class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">
+                            Social Links / Rute</p>
+                        <p class="text-4xl font-black text-slate-900 dark:text-white">&infin;</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Limit -->
+            <div class="mb-8">
+                <h4 data-i18n="benefitLabel"
+                    class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">
+                    Benefit Tambahan</h4>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div
+                        class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col justify-center items-center">
+                        <p data-i18n="benefitViralCaption"
+                            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">Viral Caption</p>
+                        <p class="text-xl font-black text-slate-900 dark:text-white">10<span
+                                class="text-sm font-bold text-slate-400">x</span></p>
+                    </div>
+                    <div
+                        class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col justify-center items-center">
+                        <p data-i18n="benefitVisualReceipt"
+                            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">Visual Receipt</p>
+                        <p class="text-xl font-black text-slate-900 dark:text-white">20<span
+                                class="text-sm font-bold text-slate-400">x</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                <button type="button" onclick="scrollToPricing(); closeQuotaModal()"
+                    class="flex-1 py-4 bg-slate-950 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-[1.02] active:scale-95 transition-all text-center border-none outline-none">
+                    <span data-i18n="buyPassBtnText">Beli Travel Pass</span>
+                </button>
+                <button type="button" onclick="closeQuotaModal()"
+                    class="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all text-center">
+                    <span data-i18n="quotaOkBtnText">Oke, Siap!</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vibe Modal -->
+    <div id="vibeModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeVibeModal()"></div>
+        <div
+            class="relative z-10 w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh]">
+            <div
+                class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+                <div class="flex items-center justify-between pointer-events-none">
+                    <h3 data-i18n="modalVibeTitle" class="text-xl font-black text-slate-800 dark:text-white">Pilih
+                        Persona Pemandu</h3>
+                    <div
+                        class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-slate-400">
+                        <i class="fas fa-mask"></i>
+                    </div>
+                </div>
+                <p data-i18n="modalVibeSub" class="text-xs text-slate-500 font-medium mt-2">Pilih gaya bahasa AI buat
+                    nemenin jalan-jalan kamu.
+                </p>
+            </div>
+
+            <!-- Vibe Options -->
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 relative">
+                <div class="grid grid-cols-1 gap-3" id="vibeContainer">
+                    <!-- Gen-Z -->
+                    <label class="cursor-pointer group">
+                        <input type="radio" name="vibe_option" value="Gen-Z" class="peer sr-only" checked
+                            onchange="updateSelectedVibe()">
+                        <div
+                            class="p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-violet-200 hover:bg-violet-50/50 dark:hover:border-violet-900/50 dark:hover:bg-violet-900/10 transition-all peer-checked:border-violet-500 peer-checked:bg-violet-50 dark:peer-checked:bg-violet-900/20 peer-checked:shadow-sm relative overflow-hidden">
+                            <div
+                                class="absolute top-4 right-4 text-violet-500 opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-xl"></i>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div>
+                                    <h4 data-i18n="vibeGenZTitle"
+                                        class="font-bold text-slate-800 dark:text-white text-base mb-1">Gen-Z Santuy (W)
+                                    </h4>
+                                    <p data-i18n="vibeGenZDesc"
+                                        class="text-[11px] text-slate-500 font-medium leading-relaxed">Bahasa gaul,
+                                        asik,
+                                        banyak slang kekinian anak Jaksel/sosmed.</p>
+                                    <div data-i18n="vibeDefault"
+                                        class="mt-2 text-[10px] font-bold text-violet-600 bg-violet-100 dark:bg-violet-900/30 dark:text-violet-300 px-2.5 py-1 rounded-md inline-block">
+                                        Default</div>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Professional Guide -->
+                    <label class="cursor-pointer group">
+                        <input type="radio" name="vibe_option" value="Pro Guide" class="peer sr-only"
+                            onchange="updateSelectedVibe()">
+                        <div
+                            class="p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-emerald-200 hover:bg-emerald-50/50 dark:hover:border-emerald-900/50 dark:hover:bg-emerald-900/10 transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-900/20 peer-checked:shadow-sm relative overflow-hidden">
+                            <div
+                                class="absolute top-4 right-4 text-emerald-500 opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-xl"></i>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-map-signs"></i>
+                                </div>
+                                <div>
+                                    <h4 data-i18n="vibeProTitle"
+                                        class="font-bold text-slate-800 dark:text-white text-base mb-1">Local Expert
+                                        Guide</h4>
+                                    <p data-i18n="vibeProDesc"
+                                        class="text-[11px] text-slate-500 font-medium leading-relaxed">Edukasi sejarah
+                                        tempat, super informatif dan jelas terstruktur.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Puitis/Senja -->
+                    <label class="cursor-pointer group">
+                        <input type="radio" name="vibe_option" value="Puitis" class="peer sr-only"
+                            onchange="updateSelectedVibe()">
+                        <div
+                            class="p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-rose-200 hover:bg-rose-50/50 dark:hover:border-rose-900/50 dark:hover:bg-rose-900/10 transition-all peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-900/20 peer-checked:shadow-sm relative overflow-hidden">
+                            <div
+                                class="absolute top-4 right-4 text-rose-500 opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-xl"></i>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-orange-500 text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-coffee"></i>
+                                </div>
+                                <div>
+                                    <h4 data-i18n="vibeIndieTitle"
+                                        class="font-bold text-slate-800 dark:text-white text-base mb-1">Anak Indie Senja
+                                    </h4>
+                                    <p data-i18n="vibeIndieDesc"
+                                        class="text-[11px] text-slate-500 font-medium leading-relaxed">Sangat estetik,
+                                        bahasanya puitis, cocok buat healing sendu.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Custom Prompt -->
+                    <label class="cursor-pointer group relative">
+                        <input type="radio" name="vibe_option" value="Custom" class="peer sr-only"
+                            onchange="updateSelectedVibe()">
+                        <div
+                            class="p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-amber-200 hover:bg-amber-50/50 dark:hover:border-amber-900/50 dark:hover:bg-amber-900/10 transition-all peer-checked:border-amber-500 peer-checked:bg-amber-50 dark:peer-checked:bg-amber-900/20 peer-checked:shadow-sm relative overflow-hidden">
+                            <div
+                                class="absolute top-4 right-4 text-amber-500 opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-xl"></i>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-magic"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 data-i18n="vibeCustomTitle"
+                                        class="font-bold text-slate-800 dark:text-white text-base mb-1">Bikin Persona
+                                        Sendiri</h4>
+                                    <p data-i18n="vibeCustomDesc"
+                                        class="text-[11px] text-slate-500 font-medium leading-relaxed">Describe AI mau
+                                        disuruh jadi siapa. (Misal: Jadi Kakek Galak)</p>
+
+                                    <div
+                                        class="mt-3 overflow-hidden transition-all duration-300 max-h-0 opacity-0 peer-checked:max-h-[100px] peer-checked:opacity-100 peer-checked:mt-3">
+                                        <input type="text" id="customVibeInput"
+                                            data-i18n-placeholder="vibeCustomPlaceholder"
+                                            placeholder="Ketik persona di sini..."
+                                            class="w-full bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 transition-colors"
+                                            onkeyup="document.getElementById('vibeTraitInput').value = this.value">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div
+                class="px-8 py-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0 flex gap-3">
+                <button type="button" onclick="closeVibeModal()"
+                    class="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-black text-xs uppercase tracking-[0.1em] hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all text-center">
+                    <span data-i18n="vibeCancelBtn">Batal</span>
+                </button>
+                <button type="button" onclick="confirmVibeSelection()"
+                    class="flex-[2] py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-center">
+                    <span data-i18n="vibeConfirmBtn">Pilih Persona</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── i18n Language System ─────────────────────────────────────────────
+        const TRANSLATIONS = {
+            id: { historyTitle: 'Riwayat Rute Kamu', historySub: 'Recent Itineraries', exploreFeatures: 'EKSPLOR FITUR', featuresSub: 'Cuaca, Budget & Rute AI...', socialLink: 'SOCIAL LINK', locationLocked: 'LOKASI TERKUNCI', buildRoute: 'Buat Rute AI', promptPlaceholder: 'Cari cafe di Bandung yang asik buat nugas...', categoryWalk: 'Jalan-jalan', categoryEat: 'Jajan', categoryShop: 'Shopping', categoryHangout: 'Nongkrong', categoryHeal: 'Healing', upgradeKuota: 'UPGRADE KUOTA', pilihPaket: 'Pilih Paket Premium', basicDesc: 'Cocok untuk kebutuhan personal sesekali. Dapatkan 10x Generate rute & itinerary keren.', topupBtn: 'Topup Sekarang', bestValue: 'Best Value', proDesc: 'Akses tanpa batas untuk para traveler. Bebas limit rute dan prioritas AI antrian.', joinProBtn: 'Join Pro Sekarang', securePayment: 'Pembayaran Aman oleh Mayar.id', modalSocialTitle: 'Paste Social Links', socialPlaceholder: 'Paste link video di sini...', addLinkBtnText: 'Tambah Link Lain', saveLinksBtnText: 'Simpan & Lanjutkan', modalFeaturesTitle: 'Eksplor Fitur AI Kami', feature1Title: 'Buat Rute by Prompting', feature1Desc: 'Tulis aja maunya apa, AI langsung racikin rute jalan-jalannya lengkap dengan tempat hits!', feature2Title: 'Voice Prompt', feature2Desc: 'Lagi males ngetik? Ngomong aja dan AI bakal terjemahin suaramu jadi rute seru secara real-time.', feature3Title: 'Ekstrak dari Social Link', feature3Desc: 'Ada video viral di TikTok atau IG? Paste link-nya, biar AI ekstrak lokasi-lokasinya otomatis.', feature4Title: 'Bikin Viral Caption', feature4Desc: 'Dapetin saran caption ala selebgram buat disebarin waktu pamerin rute perjalananmu.', feature5Title: 'Visual Receipt', feature5Desc: 'Lihat breakdown budget otomatis buat rute, jajan, atau tiket wisata versi receipt estetik!', feature6Title: 'Persona Pemandu', feature6Desc: 'Bisa pilih AI mau ngomong kayak Gen-Z santuy, pro tour guide, atau sok puitis ala senja.', closeFeaturesBtnText: 'Tutup Eksplorasi', modalQuotaLabel: 'Sisa Kuota Utama Kamu', statGenerateRoute: 'Generate Rute', statSocialLinks: 'Social Links / Rute', benefitLabel: 'Benefit Tambahan', benefitViralCaption: 'Viral Caption', benefitVisualReceipt: 'Visual Receipt', buyPassBtnText: 'Beli Travel Pass', quotaOkBtnText: 'Oke, Siap!', modalVibeTitle: 'Pilih Persona Pemandu', modalVibeSub: 'Pilih gaya bahasa AI buat nemenin jalan-jalan kamu.', vibeGenZTitle: 'Chill Gen-Z', vibeGenZDesc: 'Bahasa gaul, asik, banyak slang kekinian anak Jaksel/sosmed.', vibeDefault: 'Default', vibeProTitle: 'Local Expert Guide', vibeProDesc: 'Edukasi sejarah tempat, super informatif dan jelas terstruktur.', vibeIndieTitle: 'Anak Indie Senja', vibeIndieDesc: 'Sangat estetik, bahasanya puitis, cocok buat healing sendu.', vibeCustomTitle: 'Bikin Persona Sendiri', vibeCustomDesc: 'Describe AI mau disuruh jadi siapa. (Misal: Jadi Kakek Galak)', vibeCustomPlaceholder: 'Ketik persona di sini...', vibeCancelBtn: 'Batal', vibeConfirmBtn: 'Pilih Persona', socialRouteTitle: 'Rute dari Social Media', socialRouteDesc: 'Tempel link Reels atau TikTok untuk harvesting destinasi otomatis.', socialQuotaLabel: 'QUOTA', inputAddLinkBtn: 'Input / Tambah Link', textMode: 'TEKS PROMPT' },
+            en: { historyTitle: 'Your Route History', historySub: 'Recent Itineraries', exploreFeatures: 'EXPLORE FEATURES', featuresSub: 'Weather, Budget & AI Route...', socialLink: 'SOCIAL LINK', locationLocked: 'LOCATION LOCKED', buildRoute: 'Build AI Route', promptPlaceholder: 'Find a cozy cafe in Bandung for studying...', categoryWalk: 'Sightseeing', categoryEat: 'Food', categoryShop: 'Shopping', categoryHangout: 'Hangout', categoryHeal: 'Healing', upgradeKuota: 'UPGRADE QUOTA', pilihPaket: 'Choose Premium Plan', basicDesc: 'Perfect for occasional personal use. Get 10x route & itinerary generation.', topupBtn: 'Get Basic Now', bestValue: 'Best Value', proDesc: 'Unlimited access for travelers. No route limits and priority AI queue.', joinProBtn: 'Join Pro Now', securePayment: 'Secure Payment by Mayar.id', modalSocialTitle: 'Paste Social Links', socialPlaceholder: 'Paste video link here...', addLinkBtnText: 'Add Another Link', saveLinksBtnText: 'Save & Continue', modalFeaturesTitle: 'Explore Our AI Features', feature1Title: 'Build Route by Prompting', feature1Desc: 'Just write what you want, and AI will whip up a full sightseeing route complete with trending spots!', feature2Title: 'Voice Prompt', feature2Desc: 'Too lazy to type? Just speak and AI will translate your voice into an exciting route in real-time.', feature3Title: 'Extract from Social Link', feature3Desc: 'Found a viral video on TikTok or IG? Paste the link, and let AI automatically extract the locations.', feature4Title: 'Create Viral Captions', feature4Desc: 'Get influencer-style caption suggestions to share when showing off your travel route.', feature5Title: 'Visual Receipt', feature5Desc: 'View an automatic budget breakdown for your route, snacks, or tickets in an aesthetic receipt style!', feature6Title: 'Guide Persona', feature6Desc: 'Choose if you want the AI to talk like a relaxed Gen-Z, a professional tour guide, or a poetic sunset-lover.', closeFeaturesBtnText: 'Close Exploration', modalQuotaLabel: 'Your Main Quota Remaining', statGenerateRoute: 'Generate Route', statSocialLinks: 'Social Links / Route', benefitLabel: 'Additional Benefits', benefitViralCaption: 'Viral Caption', benefitVisualReceipt: 'Visual Receipt', buyPassBtnText: 'Buy Travel Pass', quotaOkBtnText: 'Okay, Ready!', modalVibeTitle: 'Choose Guide Persona', modalVibeSub: "Choose the AI's language style to accompany your travels.", vibeGenZTitle: 'Chill Gen-Z', vibeGenZDesc: 'Slangy, cool, lots of trendy social media slang.', vibeDefault: 'Default', vibeProTitle: 'Local Expert Guide', vibeProDesc: 'Local history education, super informative and clearly structured.', vibeIndieTitle: 'Sunset Indie', vibeIndieDesc: 'Very aesthetic, poetic language, perfect for moody healing.', vibeCustomTitle: 'Create Your Own Persona', vibeCustomDesc: 'Describe who you want the AI to be. (e.g., Grumpy Grandpa)', vibeCustomPlaceholder: 'Type persona here...', vibeCancelBtn: 'Cancel', vibeConfirmBtn: 'Choose Persona', socialRouteTitle: 'Route from Social Media', socialRouteDesc: 'Paste Reels or TikTok links for automatic destination harvesting.', socialQuotaLabel: 'QUOTA', inputAddLinkBtn: 'Input / Add Link', textMode: 'TEXT PROMPT' },
+            ja: { exploreFeatures: '機能を探る', featuresSub: '天気・予算・AIルート...', socialLink: 'ソーシャルリンク', locationLocked: '位置情報ロック済み', buildRoute: 'AIルート作成', promptPlaceholder: 'バンドゥンの居心地よいカフェを探す...', categoryWalk: '散策', categoryEat: 'グルメ', categoryShop: 'ショッピング', categoryHangout: 'たまり場', categoryHeal: 'ヒーリング', upgradeKuota: 'クォータ追加', pilihPaket: 'プランを選ぶ', basicDesc: '個人利用に最適。ルート＆旅程を10回生成できます。', topupBtn: '今すぐ購入', bestValue: 'お得', proDesc: '旅人向けの無制限アクセス。ルート制限なし・AI優先キュー付き。', joinProBtn: 'プロに参加', securePayment: 'Mayar.idによる安全決済', modalSocialTitle: 'ソーシャルリンクを貼り付け', socialPlaceholder: 'ここにビデオリンクを貼り付け...', addLinkBtnText: '別のリンクを追加', saveLinksBtnText: '保存して続行', modalFeaturesTitle: 'AI機能を探る', feature1Title: 'プロンプトでルート作成', feature1Desc: '欲しいものを書くだけで、AIがトレンドスポットを含む完全な観光ルートを作成します！', feature2Title: '音声プロンプト', feature2Desc: '入力が面倒ですか？話すだけで、AIがリアルタイムであなたの声をエキサイティングなルートに翻訳します。', feature3Title: 'ソーシャルリンクから抽出', feature3Desc: 'TikTokやIGでバイラルビデオを見つけましたか？リンクを貼り付けると、AIが自動的に場所を抽出します。', feature4Title: 'バイラルキャプションを作成', feature4Desc: '旅行ルートを自慢するときに共有できる、インフルエンサー風のキャプション提案を受け取りましょう。', feature5Title: 'ビジュアルレシート', feature5Desc: 'ルート、おやつ、またはチケットの自動予算内訳を、エステティックなレシートスタイルで表示します！', feature6Title: 'ガイドのペルソナ', feature6Desc: 'AIにリラックスしたZ世代、プロのツアーガイド、または詩的な夕暮れ愛好家のように話させたいか選んでください。', closeFeaturesBtnText: '探索を閉じる', modalQuotaLabel: '残りのメインクォータ', statGenerateRoute: 'ルート生成', statSocialLinks: 'ソーシャルリンク / ルート', benefitLabel: '追加特典', benefitViralCaption: 'バイラルキャプション', benefitVisualReceipt: 'ビジュアルレシート', buyPassBtnText: 'トラベルパスを購入', quotaOkBtnText: 'はい、準備完了！', modalVibeTitle: 'ガイドのペルソナを選択', modalVibeSub: 'あなたに同行するAIの言語スタイルを選択してください。', vibeGenZTitle: 'リラックスしたZ世代', vibeGenZDesc: 'スラングが多く、クールで、最新のソーシャルメディアのスラングがたくさん。', vibeDefault: 'デフォルト', vibeProTitle: 'ローカルエキスパートガイド', vibeProDesc: '地元の歴史教育、非常に有益で明確に構成されています。', vibeIndieTitle: 'サンセットインディー', vibeIndieDesc: '非常にエステティックで詩的な言語、ムーディーなヒーリングに最適。', vibeCustomTitle: '独自のペルソナを作成', vibeCustomDesc: 'AIに誰になってほしいか説明してください', vibeCustomPlaceholder: 'ここにペルソナを入力...', vibeCancelBtn: 'キャンセル', vibeConfirmBtn: 'ペルソナを選択', socialRouteTitle: 'ソーシャルメディアからのルート', socialRouteDesc: 'リールやTikTokのリンクを貼り付けて、目的地の自動収集を開始します。', socialQuotaLabel: 'クォータ', inputAddLinkBtn: 'リンクを入力 / 追加', textMode: 'テキストプロンプト' },
+            ko: { exploreFeatures: '기능 탐색', featuresSub: '날씨, 예산 & AI 경로...', socialLink: '소셜 링크', locationLocked: '위치 잠금됨', buildRoute: 'AI 경로 만들기', promptPlaceholder: '반둥에서 공부하기 좋은 카페 찾기...', categoryWalk: '도보 여행', categoryEat: '음식', categoryShop: '쇼핑', categoryHangout: '만남', categoryHeal: '힐링', upgradeKuota: '쿼터 업그레이드', pilihPaket: '프리미엄 플랜 선택', basicDesc: '개인 가끔 사용에 적합. 루트 & 일정 10회 생성 가능.', topupBtn: '지금 구매', bestValue: '최고 혜택', proDesc: '여행자를 위한 무제한 접속. 루트 제한 없음 및 AI 우선 대기.', joinProBtn: '프로 가입하기', securePayment: 'Mayar.id 안전 결제', modalSocialTitle: '소셜 링크 붙여넣기', socialPlaceholder: '여기에 비디오 링크 붙여넣기...', addLinkBtnText: '다른 링크 추가', saveLinksBtnText: '저장 및 계속', modalFeaturesTitle: 'AI 기능 탐색', feature1Title: '프롬프트로 경로 생성', feature1Desc: '원하는 것을 적기만 하면 AI가 인기 명소를 포함한 전체 관광 경로를 만들어 드립니다!', feature2Title: '음성 프롬프트', feature2Desc: '타이핑하기 귀찮으신가요? 말씀만 하세요. AI가 여러분의 목소리를 실시간으로 흥미로운 경로로 번역해 드립니다.', feature3Title: '소셜 링크에서 추출', feature3Desc: 'TikTok이나 IG에서 유행하는 영상을 보셨나요? 링크를 붙여넣으면 AI가 자동으로 위치를 추출해 드립니다.', feature4Title: '바이럴 캡션 만들기', feature4Desc: '여행 경로를 자랑할 때 공유할 인플루언서 스타일의 캡션 제안을 받아보세요.', feature5Title: '비주얼 영수증', feature5Desc: '경로, 간식 또는 티켓에 대한 자동 예산 내역을 감각적인 영수증 스타일로 확인하세요!', feature6Title: '가이드 페르소나', feature6Desc: 'AI가 편안한 Z세대, 전문 투어 가이드 또는 시적인 감성의 소유자처럼 말하도록 선택할 수 있습니다.', closeFeaturesBtnText: '탐색 닫기', modalQuotaLabel: '남은 메인 쿼터', statGenerateRoute: '경로 생성', statSocialLinks: '소셜 링크 / 경로', benefitLabel: '추가 혜택', benefitViralCaption: '바이럴 캡션', benefitVisualReceipt: '비주얼 영수증', buyPassBtnText: '트래블 패스 구매', quotaOkBtnText: '확인, 완료!', modalVibeTitle: '가이드 페르소나 선택', modalVibeSub: '여행에 동행할 AI의 언어 스타일을 선택하세요.', vibeGenZTitle: '편안한 Z세대', vibeGenZDesc: '속어 사용, 쿨함, 최신 유행 소셜 미디어 유행어 다수 포함.', vibeDefault: '기본값', vibeProTitle: '현지 전문가 가이드', vibeProDesc: '현지 역사 교육, 매우 유익하고 체계적인 구조.', vibeIndieTitle: '선셋 인디', vibeIndieDesc: '매우 감각적이고 시적인 언어, 차분한 힐링에 완벽함.', vibeCustomTitle: '나만의 페르소나 만들기', vibeCustomDesc: 'AI가 누가 되기를 원하는지 설명하세요', vibeCustomPlaceholder: '여기에 페르소나 입력...', vibeCancelBtn: '취소', vibeConfirmBtn: '페르소나 선택', socialRouteTitle: '소셜 미디어 경로', socialRouteDesc: '릴스나 틱톡 링크를 붙여넣어 목적지 자동 추출을 시작하세요.', socialQuotaLabel: '쿼터', inputAddLinkBtn: '링크 입력 / 추가', textMode: '텍스트 프롬프트' },
+            zh: { exploreFeatures: '探索功能', featuresSub: '天气、预算与AI路线...', socialLink: '社交链接', locationLocked: '位置已锁定', buildRoute: '生成AI路线', promptPlaceholder: '在万隆找一个适合学习的咖啡馆...', categoryWalk: '观光', categoryEat: '美食', categoryShop: '购物', categoryHangout: '聚会', categoryHeal: '疗愈', upgradeKuota: '升级配额', pilihPaket: '选择高级方案', basicDesc: '适合偶尔个人使用。获得10次路线和行程生成。', topupBtn: '立即充值', bestValue: '最超值', proDesc: '为旅行者提供无限访问。无路线限制，AI优先队列。', joinProBtn: '加入Pro计划', securePayment: 'Mayar.id安全支付', modalSocialTitle: '粘贴社交链接', socialPlaceholder: '在此处粘贴视频链接...', addLinkBtnText: '添加另一个链接', saveLinksBtnText: '保存并继续', modalFeaturesTitle: '探索我们的 AI 功能', feature1Title: '通过提示构建路线', feature1Desc: '只需写下您的需求，AI 就会为您规划包含热门景点的完整观光路线！', feature2Title: '语音提示', feature2Desc: '懒得打字？只需说话，AI 就会实时将您的声音转化为精彩的路线。', feature3Title: '从社交链接提取', feature3Desc: '在 TikTok 或 IG 上看到了热门视频？粘贴链接，让 AI 自动提取地点。', feature4Title: '创建热门文案', feature4Desc: '获取红人风格的文案建议，在展示您的旅行路线时分享。', feature5Title: '可视化收据', feature5Desc: '以精美的收据风格查看您的路线、零食或门票的自动预算明细！', feature6Title: '导游人格', feature6Desc: '选择您希望 AI 像轻松的 Z 世代、专业导游还是富有诗意的夕阳爱好者一样说话。', closeFeaturesBtnText: '关闭探索', modalQuotaLabel: '您的剩余主要配额', statGenerateRoute: '生成路线', statSocialLinks: '社交链接 / 路线', benefitLabel: '额外福利', benefitViralCaption: '热门文案', benefitVisualReceipt: '可视化收据', buyPassBtnText: '购买旅行通行证', quotaOkBtnText: '好的，准备好了！', modalVibeTitle: '选择导游人格', modalVibeSub: '选择 AI 的语言风格来陪伴您的旅行。', vibeGenZTitle: '轻松的 Z 世代', vibeGenZDesc: '俚语化、酷、包含大量流行的社交媒体俚语。', vibeDefault: '默认', vibeProTitle: '当地专家导游', vibeProDesc: '当地历史教育，信息量极大且结构清晰。', vibeIndieTitle: '夕阳独立风', vibeIndieDesc: '非常具有审美感，诗意的语言，非常适合忧郁的疗愈。', vibeCustomTitle: '创建您自己的人格', vibeCustomDesc: '描述您希望 AI 成为谁', vibeCustomPlaceholder: '在此处输入人格...', vibeCancelBtn: '取消', vibeConfirmBtn: '选择人格', socialRouteTitle: '社交媒体路线', socialRouteDesc: '粘贴 Reels 或 TikTok 链接，自动提取目的地。', socialQuotaLabel: '配额', inputAddLinkBtn: '输入 / 添加链接', textMode: '文本提示' },
+            ru: { exploreFeatures: 'ФУНКЦИИ', featuresSub: 'Погода, бюджет и AI маршрут...', socialLink: 'СОЦ. ССЫЛКА', locationLocked: 'ЛОКАЦИЯ ЗАКРЕПЛЕНА', buildRoute: 'Создать маршрут AI', promptPlaceholder: 'Найти уютное кафе в Бандунге...', categoryWalk: 'Прогулка', categoryEat: 'Еда', categoryShop: 'Шоппинг', categoryHangout: 'Отдых', categoryHeal: 'Исцеление', upgradeKuota: 'УВЕЛИЧИТЬ ЛИМИТ', pilihPaket: 'Выберите тариф', basicDesc: 'Идеально для редкого использования. Получите 10 генераций маршрутов.', topupBtn: 'Купить сейчас', bestValue: 'Выгодно', proDesc: 'Безлимитный доступ для путешественников. Без ограничений и с приоритетом AI.', joinProBtn: 'Перейти на Pro', securePayment: 'Безопасная оплата через Mayar.id', modalSocialTitle: 'Вставьте ссылки на соцсети', socialPlaceholder: 'Вставьте ссылку на видео здесь...', addLinkBtnText: 'Добавить еще одну ссылку', saveLinksBtnText: 'Сохранить и продолжить', modalFeaturesTitle: 'Изучите наши функции AI', feature1Title: 'Создать маршрут по запросу', feature1Desc: 'Просто напишите, что вы хотите, и AI составит полный маршрут осмотра достопримечательностей с популярными местами!', feature2Title: 'Голосовой запрос', feature2Desc: 'Лень печатать? Просто скажите, и AI переведет ваш голос в увлекательный маршрут в реальном времени.', feature3Title: 'Извлечь из соцсетей', feature3Desc: 'Нашли вирусное видео в TikTok или IG? Вставьте ссылку, и пусть AI автоматически извлечет локации.', feature4Title: 'Создать вирусную подпись', feature4Desc: 'Получите предложения подписей в стиле инфлюенсеров, чтобы поделиться ими, когда будете хвастаться своим маршрутом.', feature5Title: 'Визуальный чек', feature5Desc: 'Посмотрите автоматическую разбивку бюджета на маршрут, перекусы или билеты в эстетичном стиле чека!', feature6Title: 'Личность гида', feature6Desc: 'Выберите, хотите ли вы, чтобы AI говорил как расслабленный зумер, профессиональный гид или поэтичный любитель закатов.', closeFeaturesBtnText: 'Закрыть изучение', modalQuotaLabel: 'Ваш основной остаток квоты', statGenerateRoute: 'Генерация маршрута', statSocialLinks: 'Соцсети / Маршрут', benefitLabel: 'Дополнительные преимущества', benefitViralCaption: 'Вирусная подпись', benefitVisualReceipt: 'Визуальный чек', buyPassBtnText: 'Купить Travel Pass', quotaOkBtnText: 'Хорошо, готово!', modalVibeTitle: 'Выберите личность гида', modalVibeSub: 'Выберите стиль речи AI, который будет сопровождать вас в поездках.', vibeGenZTitle: 'Расслабленный зумер', vibeGenZDesc: 'Сленговый, крутой, много трендового сленга из соцсетей.', vibeDefault: 'По умолчанию', vibeProTitle: 'Местный гид-эксперт', vibeProDesc: 'Обучение местной истории, очень информативно и четко структурировано.', vibeIndieTitle: 'Инди-закат', vibeIndieDesc: 'Очень эстетичный, поэтичный язык, идеально подходит для меланхоличного исцеления.', vibeCustomTitle: 'Создайте свою собственную личность', vibeCustomDesc: 'Опишите, кем вы хотите видеть AI', vibeCustomPlaceholder: 'Введите личность здесь...', vibeCancelBtn: 'Отмена', vibeConfirmBtn: 'Выбрать личность', socialRouteTitle: 'Маршрут из соцсетей', socialRouteDesc: 'Вставьте ссылки на Reels или TikTok для автоматического сбора локаций.', socialQuotaLabel: 'КВОТА', inputAddLinkBtn: 'Ввести / Добавить ссылку', textMode: 'ТЕКСТОВЫЙ ЗАПРОС' },
+            nl: { exploreFeatures: 'FUNCTIES', featuresSub: 'Weer, budget & AI-route...', socialLink: 'SOCIALE LINK', locationLocked: 'LOCATIE VERGRENDELD', buildRoute: 'AI Route Maken', promptPlaceholder: 'Vind een gezellig cafe in Bandung...', categoryWalk: 'Wandelen', categoryEat: 'Eten', categoryShop: 'Winkelen', categoryHangout: 'Rondlopen', categoryHeal: 'Ontspanning', upgradeKuota: 'QUOTA UPGRADEN', pilihPaket: 'Kies Premium Plan', basicDesc: 'Perfect voor incidenteel gebruik. Genereer 10x routes & reisschema.', topupBtn: 'Nu Kopen', bestValue: 'Beste Waarde', proDesc: 'Onbeperkte toegang voor reizigers. Geen routelimieten en AI-prioriteit.', joinProBtn: 'Nu Pro Worden', securePayment: 'Veilige Betaling via Mayar.id', modalSocialTitle: 'Plak sociale links', socialPlaceholder: 'Plak videolink hier...', addLinkBtnText: 'Voeg nog een link toe', saveLinksBtnText: 'Opslaan & doorgaan', modalFeaturesTitle: 'Verken onze AI-functies', feature1Title: 'Maak route via prompt', feature1Desc: 'Schrijf gewoon wat je wilt, en AI stelt een volledige sightseeingroute samen met populaire plekken!', feature2Title: 'Spraakopdracht', feature2Desc: 'Geen zin om te typen? Spreek gewoon en AI vertaalt je stem realtime naar een spannende route.', feature3Title: 'Extraheer uit sociale link', feature3Desc: 'Viraal video gezien op TikTok of IG? Plak de link en laat AI automatisch de locaties extraheren.', feature4Title: 'Maak virale bijschriften', feature4Desc: 'Ontvang bijschriftsuggesties in influencer-stijl om te delen wanneer je met je reisroute pronkt.', feature5Title: 'Visueel bonnetje', feature5Desc: 'Bekijk een automatische budgetspecificatie voor je route, snacks of tickets in een esthetische bonnetjesstijl!', feature6Title: 'Gids-persona', feature6Desc: 'Kies of je de AI wilt laten praten als een ontspannen Gen-Z, een professionele gids of een poëtische zonsondergang-liefhebber.', closeFeaturesBtnText: 'Verkenning sluiten', modalQuotaLabel: 'Je resterende hoofdquota', statGenerateRoute: 'Route genereren', statSocialLinks: 'Sociale links / Route', benefitLabel: 'Extra voordelen', benefitViralCaption: 'Viraal bijschrift', benefitVisualReceipt: 'Visueel bonnetje', buyPassBtnText: 'Koop Travel Pass', quotaOkBtnText: 'Oké, klaar!', modalVibeTitle: 'Kies gids-persona', modalVibeSub: 'Kies de taalstijl van de AI om je tijdens je reizen te vergezellen.', vibeGenZTitle: 'Chill Gen-Z', vibeGenZDesc: 'Straattaal, cool, veel trendy sociale media-slang.', vibeDefault: 'Standaard', vibeProTitle: 'Lokale expert-gids', vibeProDesc: 'Lokale geschiedenis, zeer informatief en duidelijk gestructureerd.', vibeIndieTitle: 'Sunset Indie', vibeIndieDesc: 'Zeer esthetisch, poëtisch taalgebruik, perfect voor een melancholische healing.', vibeCustomTitle: 'Maak je eigen persona', vibeCustomDesc: 'Beschrijf wie je wilt dat de AI is', vibeCustomPlaceholder: 'Typ persona hier...', vibeCancelBtn: 'Annuleren', vibeConfirmBtn: 'Kies persona', socialRouteTitle: 'Route van Sociale Media', socialRouteDesc: 'Plak Reels- of TikTok-links voor automatische extractie van bestemmingen.', socialQuotaLabel: 'QUOTA', inputAddLinkBtn: 'Input / Link Toevoegen', textMode: 'TEKST PROMPT' },
+            af: { exploreFeatures: 'KENMERKE', featuresSub: 'Weer, begroting & AI roete...', socialLink: 'SOSIALE SKAKEL', locationLocked: 'LIGGING GESLUIT', buildRoute: 'Bou AI Roete', promptPlaceholder: 'Vind n gesellige kafee in Bandung...', categoryWalk: 'Stap', categoryEat: 'Eet', categoryShop: 'Inkopies', categoryHangout: 'Kuier', categoryHeal: 'Herstel', upgradeKuota: 'KWOTA OPGRADEER', pilihPaket: 'Kies Premium Plan', basicDesc: 'Geskik vir af-en-toe gebruik. Genereer 10x roetes en reisplanne.', topupBtn: 'Koop Nou', bestValue: 'Beste Waarde', proDesc: 'Onbeperkte toegang vir reisigers. Geen roetelimiete en AI-prioriteit.', joinProBtn: 'Sluit Pro Aan', securePayment: 'Veilige Betaling deur Mayar.id', modalSocialTitle: 'Plak sosiale skakels', socialPlaceholder: 'Plak video skakel hier...', addLinkBtnText: "Voeg nog 'n skakel toe", saveLinksBtnText: 'Stoor en gaan voort', modalFeaturesTitle: 'Verken ons AI-funksies', feature1Title: 'Bou roete via prompt', feature1Desc: "Skryf net wat jy wil hê, en AI sal 'n volledige besienswaardigheidroete saamstel met gewilde plekke!", feature2Title: 'Spraakopdrag', feature2Desc: "Te lui om te tik? Praat net en AI sal jou stem intyds in 'n opwindende roete vertaal.", feature3Title: 'Onttrek van sosiale skakel', feature3Desc: 'Viral video op TikTok of IG gesien? Plak die skakel en laat AI outomaties die bakkies onttrek.', feature4Title: 'Maak virale byskrifte', feature4Desc: 'Kry beïnvloeder-styl byskrifvoorstelle om te deel wanneer jy met jou bakkie spog.', feature5Title: 'Visuele kwitansie', feature5Desc: "Bekyk 'n outomatiese begrotingsverdeling vir jou roete, peuselhappies of kaartjies in 'n estetiese kwitansiestyl!", feature6Title: 'Gids-persona', feature6Desc: "Kies of jy die AI wil laat praat soos 'n ontspanne Gen-Z, 'n professionele toergids of 'n poëtiese sonsondergang-liefhebber.", closeFeaturesBtnText: 'Sluit verkenning', modalQuotaLabel: 'Jou oorblywende hoofkwota', statGenerateRoute: 'Genereer roete', statSocialLinks: 'Sosiale skakels / Roete', benefitLabel: 'Bykomende voordele', benefitViralCaption: 'Virale byskrif', benefitVisualReceipt: 'Visuele kwitansie', buyPassBtnText: 'Koop Travel Pass', quotaOkBtnText: 'Goed, gereed!', modalVibeTitle: 'Kies gids-persona', modalVibeSub: 'Kies die AI se taalstyl om jou op jou reise te vergesel.', vibeGenZTitle: 'Chill Gen-Z', vibeGenZDesc: 'Slang, koel, baie nuwerwetse sosiale media-slang.', vibeDefault: 'Verstek', vibeProTitle: 'Plaaslike kundige gids', vibeProDesc: 'Plaaslike geskiedenisonderrig, super informatief en duidelik gestruktureer.', vibeIndieTitle: 'Sunset Indie', vibeIndieDesc: "Baie estetiese, poëtiese taal, perfek vir 'n weemoedige herstel.", vibeCustomTitle: 'Maak jou eie persona', vibeCustomDesc: 'Beskryf wie jy wil hê die AI moet wees', vibeCustomPlaceholder: 'Tik persona hier...', vibeCancelBtn: 'Kanselleer', vibeConfirmBtn: 'Kies persona', socialRouteTitle: 'Roete vanaf Sosiale Media', socialRouteDesc: 'Plak Reels- of TikTok-skakels vir outomatiese onttrekking van bestemminge.', socialQuotaLabel: 'KWOTA', inputAddLinkBtn: 'Voer In / Voeg Skakel By', textMode: 'TEKS PROMPT' },
+            ar: { exploreFeatures: 'استكشف الميزات', featuresSub: 'الطقس والميزانية والمسار...', socialLink: 'رابط اجتماعي', locationLocked: 'الموقع مقفل', buildRoute: 'إنشاء مسار ذكي', promptPlaceholder: 'ابحث عن مقهى مريح في باندونغ...', categoryWalk: 'نزهة', categoryEat: 'طعام', categoryShop: 'تسوق', categoryHangout: 'جلسة', categoryHeal: 'استرخاء', upgradeKuota: 'ترقية الحصة', pilihPaket: 'اختر الباقة المميزة', basicDesc: 'مثالي للاستخدام الشخصي أحيانًا. احصل على 10 توليدات للمسارات والجداول.', topupBtn: 'اشترِ الآن', bestValue: 'الأفضل قيمة', proDesc: 'وصول غير محدود للمسافرين. لا حدود للمسارات وأولوية الذكاء الاصطناعي.', joinProBtn: 'انضم إلى Pro', securePayment: 'دفع آمن عبر Mayar.id', modalSocialTitle: 'لصق الروابط الاجتماعية', socialPlaceholder: 'الصق رابط الفيديو هنا...', addLinkBtnText: 'إضافة رابط آخر', saveLinksBtnText: 'حفظ ومتابعة', modalFeaturesTitle: 'استكشف ميزات الذكاء الاصطناعي لدينا', feature1Title: 'إنشاء مسار عبر الأوامر', feature1Desc: 'فلك أن تكتب ما تريد، وسيقوم الذكاء الاصطناعي بإعداد مسار سياحي كامل يضم المواقع الشهيرة!', feature2Title: 'أمر صوتي', feature2Desc: 'هل تشعر بالكسل تجاه الكتابة؟ فقط تحدث وسيقوم الذكاء الاصطناعي بترجمة صوتك إلى مسار مثير في الوقت الفعلي.', feature3Title: 'استخراج من رابط اجتماعي', feature3Desc: 'هل وجدت فيديو واسع الانتشار على تيك توك أو انستقرام؟ الصق الرابط، ودع الذكاء الاصطناعي يستخرج المواقع تلقائياً.', feature4Title: 'إنشاء تسمية توضيحية واسعة الانتشار', feature4Desc: 'احصل على اقتراحات تسميات توضيحية بأسلوب المؤثرين لمشاركتها عند استعراض مسار رحلتك.', feature5Title: 'إيصال بصري', feature5Desc: 'عرض تفصيلي تلقائي للميزانية الخاصة بمسارك أو وجباتك الخفيفة أو تذاكرك بأسلوب إيصال جمالي!', feature6Title: 'شخصية الدليل', feature6Desc: 'اختر ما إذا كنت تريد أن يتحدث الذكاء الاصطناعي مثل جيل زد المسترخي، أو مرشد سياحي محترف، أو محب شعري للغروب.', closeFeaturesBtnText: 'إغلاق الاستكشاف', modalQuotaLabel: 'حصتك الرئيسية المتبقية', statGenerateRoute: 'توليد مسار', statSocialLinks: 'روابط اجتماعية / مسار', benefitLabel: 'مزايا إضافية', benefitViralCaption: 'تسمية توضيحية واسعة الانتشار', benefitVisualReceipt: 'إيصال بصري', buyPassBtnText: 'شراء تصريح سفر', quotaOkBtnText: 'حسناً، جاهز!', modalVibeTitle: 'اختر شخصية الدليل', modalVibeSub: 'اختر أسلوب لغة الذكاء الاصطناعي لمرافقة رحلاتك.', vibeGenZTitle: 'جيل زد المسترخي', vibeGenZDesc: 'لغة عامية، رائعة، الكثير من المصطلحات العصرية لوسائل التواصل الاجتماعي.', vibeDefault: 'افتراضي', vibeProTitle: 'مرشد خبير محلي', vibeProDesc: 'تعليم التاريخ المحلي، غني جداً بالمعلومات ومنظم بوضوح.', vibeIndieTitle: 'إندي الغروب', vibeIndieDesc: 'جمالي للغاية، لغة شاعرية، مثالي للاسترخاء الحزين.', vibeCustomTitle: 'إنشاء شخصيتك الخاصة', vibeCustomDesc: 'صف من تريد أن يكون الذكاء الاصطناعي', vibeCustomPlaceholder: 'اكتب الشخصية هنا...', vibeCancelBtn: 'إلغاء', vibeConfirmBtn: 'اختيار الشخصية', socialRouteTitle: 'مسار من وسائل التواصل الاجتماعي', socialRouteDesc: 'الصق روابط Reels أو TikTok لجمع الوجهات تلقائياً.', socialQuotaLabel: 'الحصة', inputAddLinkBtn: 'إدخال / إضافة رابط', textMode: 'نص الأوامر' },
+        };
+        const LANG_FLAGS = { id: '🇮🇩', en: '🇺🇸', ja: '🇯🇵', ko: '🇰🇷', zh: '🇨🇳', ru: '🇷🇺', nl: '🇳🇱', af: '🇿🇦', ar: '🇸🇦' };
+        const CATEGORY_PROMPTS = {
+            id: ['Bikinkan rute jalan-jalan santuy keliling kota hari ini', 'Rekomendasi tempat jajan pinggir jalan yang viral dan asik', 'Cari rute tempat shopping barang lucu yang murah meriah', 'Cari cafe asik buat nongkrong wifi kenceng colokan banyak', 'Rekomendasi destinasi healing yang sejuk pemandangannya bagus'],
+            en: ['Create a relaxing sightseeing route around the city today', 'Recommend viral street food routes nearby', 'Find shopping routes for cute and affordable items', 'Find a cozy cafe for hanging out with fast wifi', 'Recommend a healing destination with scenic views'],
+            ja: ['今日の観光ルートを作成してください', 'バイラルな屋台グルメのルートを勧めて', '安くてかわいいショッピングルートを探す', '高速Wifiのあるカフェを探す', '景色がよい癒しの目的地を推薦'],
+            ko: ['오늘 도시 관광 코스를 만들어주세요', '바이럴 노점 음식 코스 추천', '예쁜 물건이 저렴한 쇼핑 코스 찾기', '빠른 와이파이가 있는 아늑한 카페 찾기', '힐링할 수 있는 아름다운 명소 추천'],
+            zh: ['为我创建今天的城市观光路线', '推荐热门街边小吃路线', '寻找可爱且实惠的购物路线', '找一个有快速WiFi的温馨咖啡馆', '推荐风景优美的疗愈目的地'],
+            ru: ['Составьте маршрут прогулки по городу на сегодня', 'Порекомендуйте популярные уличные кафе рядом', 'Найдите маршрут для шоппинга с недорогими товарами', 'Найдите уютное кафе с хорошим вайфаем', 'Порекомендуйте место для отдыха с прекрасными видами'],
+            nl: ['Maak vandaag een rondleiding door de stad', 'Aanbevolen straatetensroutes', 'Zoek winkelroutes voor leuke en betaalbare items', 'Vind een gezellig cafe met snel wifi', 'Aanbevolen ontspanningsbestemming met mooi uitzicht'],
+            af: ['Skep stadsrondrit vir vandag', 'Aanbevele straatkoskafees naby', 'Soek inkopiesroetes vir oulike items', 'Vind gesellige kafee met vinnige wifi', 'Aanbevele ontspanningbestemming met pragtige uitsigte'],
+            ar: ['انشئ مسار جولة في المدينة لهذا اليوم', 'اقترح مسارات طعام شعبية', 'ابحث عن مسارات تسوق بمنتجات رخيصة', 'ابحث عن مقهى مريح بواي فاي سريع', 'اقترح وجهة استرخاء بمناظر طبيعية جميلة'],
+        };
+
+        window.setLanguage = function (lang) {
+            var t = TRANSLATIONS[lang] || TRANSLATIONS.id;
+            document.querySelectorAll('[data-i18n]').forEach(function (el) {
+                var key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+                var key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+            var textarea = document.getElementById('promptInput');
+            if (textarea && t.promptPlaceholder) textarea.placeholder = t.promptPlaceholder;
+            var catKeys = ['categoryWalk', 'categoryEat', 'categoryShop', 'categoryHangout', 'categoryHeal'];
+            var catBtns = document.querySelectorAll('[data-cat]');
+            catBtns.forEach(function (btn) {
+                var i = parseInt(btn.getAttribute('data-cat'));
+                var iconEl = btn.querySelector('i');
+                if (t[catKeys[i]]) btn.textContent = t[catKeys[i]];
+                if (iconEl) btn.prepend(iconEl);
+            });
+            var catPrompts = CATEGORY_PROMPTS[lang] || CATEGORY_PROMPTS.id;
+            catBtns.forEach(function (btn) {
+                var i = parseInt(btn.getAttribute('data-cat'));
+                if (catPrompts[i]) btn.setAttribute('onclick', 'fillPrompt("' + catPrompts[i] + '")');
+            });
+            document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            document.getElementById('activeLangFlag').textContent = LANG_FLAGS[lang] || '🇮🇩';
+            // Swap taglines for typewriter
+            taglines = TAGLINES_BY_LANG[lang] || TAGLINES_BY_LANG.id;
+            tgIndex = 0; charIndex = 0; isDeleting = false;
+            localStorage.setItem('ulyn_lang', lang);
+            document.getElementById('langDropdown').classList.add('hidden');
+        };
+
+        window.toggleLangDropdown = function () {
+            document.getElementById('langDropdown').classList.toggle('hidden');
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            const btn = document.getElementById('langToggleBtn');
+            const dropdown = document.getElementById('langDropdown');
+            if (dropdown && btn && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Toggle Theme Logic
+        window.toggleTheme = function () {
+            const h = document.documentElement;
+            if (h.classList.contains('dark')) {
+                h.classList.remove('dark');
+                h.classList.add('light');
+                document.getElementById('themeIcon').classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                h.classList.remove('light');
+                h.classList.add('dark');
+                document.getElementById('themeIcon').classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        };
+
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+            document.addEventListener('DOMContentLoaded', () => {
+                const icon = document.getElementById('themeIcon');
+                if (icon) icon.classList.replace('fa-moon', 'fa-sun');
+            });
+        }
+
+        // Vibe Modal Logic
+        window.openVibeModal = function () {
+            document.getElementById('vibeModal').classList.remove('hidden');
+        };
+        window.closeVibeModal = function () {
+            document.getElementById('vibeModal').classList.add('hidden');
+        };
+        window.updateSelectedVibe = function () {
+            const selected = document.querySelector('input[name="vibe_option"]:checked');
+            if (selected && selected.value === 'Custom') {
+                setTimeout(() => document.getElementById('customVibeInput').focus(), 100);
+            }
+        };
+
+        window.confirmVibeSelection = function () {
+            const selected = document.querySelector('input[name="vibe_option"]:checked');
+            if (selected) {
+                let badgeText = '';
+                let iconClass = '';
+
+                if (selected.value === 'Gen-Z') {
+                    badgeText = 'Gen-Z(W)';
+                    iconClass = 'fas fa-bolt text-rose-500';
+                    document.getElementById('vibeTraitInput').value = '';
+                } else if (selected.value === 'Pro Guide') {
+                    badgeText = 'Pro Guide';
+                    iconClass = 'fas fa-map-signs text-emerald-500';
+                    document.getElementById('vibeTraitInput').value = '';
+                } else if (selected.value === 'Puitis') {
+                    badgeText = 'Senja';
+                    iconClass = 'fas fa-coffee text-rose-500';
+                    document.getElementById('vibeTraitInput').value = '';
+                } else if (selected.value === 'Custom') {
+                    const customVal = document.getElementById('customVibeInput').value.trim();
+                    badgeText = customVal ? customVal.substring(0, 10) + '...' : 'Custom';
+                    iconClass = 'fas fa-magic text-amber-500';
+                    document.getElementById('vibeTraitInput').value = customVal;
+                }
+
+                document.getElementById('vibeInput').value = selected.value === 'Gen-Z' ? 'Gen-Z(W)' : selected.value;
+                document.getElementById('vibeBtn').innerHTML = `<i class="${iconClass}"></i> ${badgeText} <i
+        class="fas fa-chevron-down text-slate-400 text-[10px] ml-1"></i>`;
+
+                closeVibeModal();
+            }
+        };
+
+        // UI Loading state
+        document.body.addEventListener('htmx:beforeRequest', function (evt) {
+            if (evt.detail.elt.tagName === 'FORM') {
+                document.getElementById('normalIcon').style.display = 'none';
+                document.getElementById('btnText').innerText = 'Memproses...';
+            }
+        });
+        document.body.addEventListener('htmx:afterRequest', function (evt) {
+            if (evt.detail.elt.tagName === 'FORM') {
+                document.getElementById('normalIcon').style.display = 'inline-block';
+                document.getElementById('btnText').innerText = 'Buat Rute AI';
+            }
+        });
+
+        // Social Links Logic
+        window.openSocialLinksModal = function () {
+            document.getElementById('socialLinksModal').classList.remove('hidden');
+        };
+        window.closeSocialLinksModal = function () {
+            document.getElementById('socialLinksModal').classList.add('hidden');
+        };
+
+        window.openFeaturesModal = function () {
+            document.getElementById('featuresModal').classList.remove('hidden');
+        };
+        window.closeFeaturesModal = function () {
+            document.getElementById('featuresModal').classList.add('hidden');
+        };
+
+        // Quota Modal Logic
+        window.openQuotaModal = function () {
+            const modal = document.getElementById('quotaModal');
+            const content = document.getElementById('quotaModalContent');
+            modal.classList.remove('hidden');
+            // small delay to allow display block to apply before animating opacity/transform
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        window.closeQuotaModal = function () {
+            const modal = document.getElementById('quotaModal');
+            const content = document.getElementById('quotaModalContent');
+
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); // match duration
+        };
+
+        window.scrollToPricing = function () {
+            closeQuotaModal();
+            setTimeout(() => {
+                const section = document.getElementById('pricingSection');
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 300);
+        };
+
+        // (Vibe logic handled by openVibeModal/closeVibeModal defined above)
+
+        window.addLinkInput = function () {
+            const wrapper = document.getElementById('linkInputsWrapper');
+            const div = document.createElement('div');
+            div.className = 'link-input-item group relative flex items-center mt-4';
+            div.innerHTML = `
+    <div
+        class="relative flex-grow flex items-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 focus-within:border-rose-500/50 transition-all">
+        <div class="pl-4 flex gap-1.5 opacity-40">
+            <i class="fab fa-tiktok text-sm"></i>
+            <i class="fab fa-instagram text-sm"></i>
+        </div>
+        <input type="url"
+            class="social-link-field w-full px-4 py-4 bg-transparent outline-none text-sm font-medium text-slate-800 dark:text-slate-200"
+            placeholder="Paste link video di sini...">
+    </div>
+    <button type="button" onclick="this.parentElement.remove()"
+        class="ml-2 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors">
+        <i class="fas fa-trash-alt text-sm"></i>
+    </button>
+    `;
+            wrapper.appendChild(div);
+            div.querySelector('input').focus();
+        };
+
+        window.fillPrompt = function (text) {
+            const textarea = document.getElementById('promptInput');
+            textarea.value = text;
+            textarea.focus();
+            updateSubmitButtonState();
+        };
+
+        // Typewriter Effect
+        const TAGLINES_BY_LANG = {
+            id: ['Bikin Rute Otomatis!', 'Liburan Anti Ribet!', 'Itinerary Makin Praktis!', 'Eksplor Tanpa Nyasar!', 'Jalan-jalan Santuy!'],
+            en: ['Build Routes Automatically!', 'Travel Hassle-Free!', 'Itinerary Made Easy!', 'Explore Without Getting Lost!', 'Chill Trips Ahead!'],
+            ja: ['ルートを自動作成！', '旅をもっと気軽に！', 'スケジュールが簡単に！', '迷わず探検しよう！', 'のんびり旅行！'],
+            ko: ['자동으로 루트 만들기!', '편안한 여행!', '일정이 쉬워진다!', '길 잃지 말고 탐험!', '여유로운 여행!'],
+            zh: ['自动规划路线！', '旅行无忧！', '行程轻松搞定！', '探索不迷路！', '悠闲旅行！'],
+            ru: ['Маршруты автоматически!', 'Путешествие без хлопот!', 'Маршрут — легко!', 'Исследуй без заблуждений!', 'Отдыхай по-полной!'],
+            nl: ['Routes Automatisch!', 'Reizen Zonder Stress!', 'Itinerary Makkelijk!', 'Verken Zonder Verdwalen!', 'Chill Reizen!'],
+            af: ['Roetes Outomaties!', 'Reis Sonder Stres!', 'Reisplan Maklik!', 'Verken Sonder Om Verdwaal!', 'Ontspanne Reis!'],
+            ar: ['مسارات تلقائية!', 'سفر بلا متاعب!', 'جدول رحلة بسهولة!', 'استكشف بلا تيه!', 'رحلة مريحة!'],
+        };
+        let taglines = TAGLINES_BY_LANG.id;
+
+        let tgIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let typeSpeed = 100;
+
+        function typeWriter() {
+            const currentTagline = taglines[tgIndex];
+            if (isDeleting) {
+                charIndex--;
+                typeSpeed = 40;
+            } else {
+                charIndex++;
+                typeSpeed = 80;
+            }
+
+            const typewriterEl = document.getElementById("typewriter");
+            if (typewriterEl) {
+                typewriterEl.innerHTML = currentTagline.substring(0, charIndex);
+            }
+
+            if (!isDeleting && charIndex === currentTagline.length) {
+                typeSpeed = 2000;
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                tgIndex = (tgIndex + 1) % taglines.length;
+                typeSpeed = 500;
+            }
+
+            setTimeout(typeWriter, typeSpeed);
+        }
+
+        // Geolocation Logic
+        window.getUserLocation = function () {
+            const btn = document.getElementById('locationBtn');
+            const dot = document.getElementById('locationDot');
+            const text = document.getElementById('locationText');
+            const latInput = document.getElementById('latInput');
+            const lngInput = document.getElementById('lngInput');
+
+            if (!navigator.geolocation) {
+                if (text) text.innerText = 'GPS TIDAK SUPPORT';
+                if (dot) dot.classList.replace('bg-emerald-500', 'bg-rose-500');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    if (latInput) latInput.value = lat;
+                    if (lngInput) lngInput.value = lng;
+
+                    if (text) text.innerText = 'LOKASI TERKUNCI';
+                    if (dot) dot.classList.remove('animate-pulse');
+                    if (btn) {
+                        btn.classList.add('bg-emerald-50/80');
+                        btn.classList.remove('bg-emerald-50');
+                    }
+                    console.info('Location locked:', lat, lng);
+                },
+                (error) => {
+                    console.warn('Geolocation error:', error);
+                    if (text) text.innerText = 'LOKASI MANUAL';
+                    if (dot) {
+                        dot.classList.replace('bg-emerald-500', 'bg-amber-500');
+                        dot.classList.remove('animate-pulse');
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        };
+
+        // start typewriter mapping
+        document.addEventListener('DOMContentLoaded', () => {
+            typeWriter();
+            getUserLocation(); // Auto get location
+            // Load saved language
+            const savedLang = localStorage.getItem('ulyn_lang');
+            if (savedLang && savedLang !== 'id') {
+                setLanguage(savedLang);
+            }
+        });
+
+        // ── Voice Input (Web Speech API) ──────────────────────────────────
+        (function () {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition = null;
+            let isListening = false;
+            let finalTranscript = '';
+
+            function setupRecognition() {
+                if (!SpeechRecognition) return null;
+                const r = new SpeechRecognition();
+                r.lang = 'id-ID'; // Bahasa Indonesia
+                r.interimResults = true; // show live partial results
+                r.continuous = true; // keep listening until stopped
+                r.maxAlternatives = 1;
+
+                r.onstart = function () {
+                    isListening = true;
+                    const btn = document.getElementById('micBtn');
+                    const icon = document.getElementById('micIcon');
+                    const ripple = document.getElementById('micRipple');
+                    if (btn) {
+                        btn.classList.add('bg-rose-500', 'text-white', 'shadow-lg', 'shadow-rose-500/40');
+                        btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-400');
+                    }
+                    if (icon) icon.classList.replace('fa-microphone', 'fa-stop');
+                    if (ripple) ripple.classList.remove('hidden');
+                };
+
+                r.onresult = function (event) {
+                    const textarea = document.querySelector('textarea[name="prompt"]');
+                    if (!textarea) return;
+
+                    let interim = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const t = event.results[i][0].transcript; if
+                            (event.results[i].isFinal) { finalTranscript += t + ' '; } else { interim += t; }
+                    }
+                    textarea.value = finalTranscript + interim; // auto-scroll textarea ke bawah
+                    textarea.scrollTop = textarea.scrollHeight; updateSubmitButtonState();
+                }; r.onerror = function (event) {
+                    console.warn('Speech recognition error:', event.error); if (event.error === 'not-allowed') {
+                        alert('Akses mikrofon ditolak. Izinkan akses mikrofon di browser kamu ya!');
+                    } stopListening();
+                }; r.onend = function () {
+                    if (isListening) {
+                        try { r.start(); } catch (e) {
+                            stopListening();
+                        }
+                    }
+                }; return r;
+            } function stopListening() {
+                isListening = false; if (recognition) {
+                    try {
+                        recognition.stop();
+                    } catch (e) { }
+                } const btn = document.getElementById('micBtn'); const
+                    icon = document.getElementById('micIcon'); const ripple = document.getElementById('micRipple'); if (btn) {
+                        btn.classList.remove('bg-rose-500', 'text-white', 'shadow-lg', 'shadow-rose-500/40');
+                        btn.classList.add('bg-slate-100', 'text-slate-400');
+                    } if (icon)
+                    icon.classList.replace('fa-stop', 'fa-microphone'); if (ripple) ripple.classList.add('hidden');
+                // restore finalTranscript
+                const textarea = document.querySelector('textarea[name="prompt"]'); if (textarea) finalTranscript = textarea.value;
+            }
+            window.toggleVoiceInput = function () {
+                if (!SpeechRecognition) {
+                    alert('Browser kamu belum support Voice Input. Coba pakai Chrome atau Edge ya!'); return;
+                } if (isListening) { stopListening(); } else {
+                    finalTranscript = document.querySelector('textarea[name="prompt" ]')?.value || ''; if (finalTranscript &&
+                        !finalTranscript.endsWith(' ')) finalTranscript += ' ';
+                    recognition = setupRecognition();
+                    if (recognition) {
+                        try { recognition.start(); } catch (e) {
+                            console.error(e);
+                            stopListening();
+                        }
+                    }
+                }
+            };
+
+            // stop mic jika form di-submit
+            document.getElementById('promptForm')?.addEventListener('submit', () => {
+                if (isListening) stopListening();
+            });
+        })();
+
+        // ── Input Mode Switcher ──────────────────────────────────────────
+        let inputMode = 'text'; // 'text' or 'social'
+
+        window.toggleInputMode = function (mode) {
+            inputMode = mode;
+            const textBtn = document.getElementById('textModeBtn');
+            const socialBtn = document.getElementById('socialModeBtn');
+            const textArea = document.getElementById('textInputArea');
+            const socialArea = document.getElementById('socialInputArea');
+            const promptInput = document.getElementById('promptInput');
+
+            if (mode === 'social') {
+                textBtn.classList.remove('hidden');
+                socialBtn.classList.add('hidden');
+                textArea.classList.add('hidden');
+                socialArea.classList.remove('hidden');
+                promptInput.required = false;
+            } else {
+                textBtn.classList.add('hidden');
+                socialBtn.classList.remove('hidden');
+                textArea.classList.remove('hidden');
+                socialArea.classList.add('hidden');
+                promptInput.required = true;
+            }
+            updateSubmitButtonState();
+        };
+
+        window.saveSocialLinks = function () {
+            const fields = document.querySelectorAll('.social-link-field');
+            const container = document.getElementById('socialLinksContainer');
+            const addedLinksView = document.getElementById('socialAddedLinksView');
+            const badgeTop = document.getElementById('linkCountBadge');
+            const badgeMain = document.getElementById('socialLinkBadgeMain');
+
+            const form = document.getElementById('promptForm');
+
+            form.querySelectorAll('input[name="links"]').forEach(i => i.remove());
+            container.innerHTML = '';
+            addedLinksView.innerHTML = '';
+
+            let count = 0;
+            let vals = [];
+            fields.forEach(f => {
+                let val = f.value.trim();
+                if (val.length > 5) {
+                    count++;
+                    vals.push(val);
+
+                    // Small pill for footer
+                    const pill = document.createElement('div');
+                    pill.className = 'inline-flex items-center gap-2 px-3 py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-lg text-[10px] font-bold border border-rose-100 dark:border-rose-800 m-1';
+                    pill.innerHTML = `<i class="fas fa-check-circle"></i> ${val.substring(0, 30)}...`;
+                    container.appendChild(pill);
+
+                    // List item for social view
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center gap-3 px-4 py-3 bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 rounded-xl text-left overflow-hidden';
+                    item.innerHTML = `
+                        <i class="fas fa-check-circle text-rose-500 shrink-0"></i>
+                        <span class="text-[11px] font-medium text-rose-700 dark:text-rose-300 truncate">${val}</span>
+                    `;
+                    addedLinksView.appendChild(item);
+                }
+            });
+
+            if (vals.length > 0) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'links';
+                input.value = vals.join('\n');
+                form.appendChild(input);
+            }
+
+            // Update Badges
+            if (count > 0) {
+                [badgeTop, badgeMain].forEach(b => {
+                    if (b) {
+                        b.innerText = count;
+                        b.classList.remove('hidden', 'scale-0');
+                        b.classList.add('flex', 'scale-110');
+                    }
+                });
+            } else {
+                [badgeTop, badgeMain].forEach(b => {
+                    if (b) {
+                        b.classList.add('hidden', 'scale-0');
+                        b.classList.remove('flex', 'scale-110');
+                    }
+                });
+            }
+
+            closeSocialLinksModal();
+            updateSubmitButtonState();
+        };
+
+        // ── Input Validation ──────────────────────────────────────────────
+        window.updateSubmitButtonState = function () {
+            const input = document.getElementById('promptInput');
+            const btn = document.getElementById('submitBtn');
+            const linksInput = document.querySelector('input[name="links"]');
+            if (!btn) return;
+
+            let isValid = false;
+
+            if (inputMode === 'text') {
+                const words = input ? input.value.trim().split(/\s+/).filter(w => w.length > 0) : [];
+                isValid = words.length >= 3;
+            } else {
+                // Social mode: Valid if at least 1 link is added
+                isValid = linksInput && linksInput.value.trim().length > 5;
+            }
+
+            if (isValid) {
+                btn.disabled = false;
+                btn.classList.remove('bg-slate-200', 'dark:bg-slate-700', 'text-slate-400', 'dark:text-slate-500',
+                    'cursor-not-allowed', 'opacity-60');
+                btn.classList.add('bg-gradient-to-r', 'from-rose-500', 'to-amber-500', 'text-white', 'shadow-lg',
+                    'shadow-rose-500/30', 'cursor-pointer', 'active:scale-95');
+            } else {
+                btn.disabled = true;
+                btn.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-400', 'dark:text-slate-500',
+                    'cursor-not-allowed', 'opacity-60');
+                btn.classList.remove('bg-gradient-to-r', 'from-rose-500', 'to-amber-500', 'text-white', 'shadow-lg',
+                    'shadow-rose-500/30', 'cursor-pointer', 'active:scale-95');
+            }
+        };
+
+        // Processing Modal Logic
+        const processingPhases = [
+            "MENGUMPULKAN DATA LOKASI...",
+            "MENGIDENTIFIKASI HIDDEN GEMS...",
+            "MENGHITUNG JARAK ANTAR TITIK...",
+            "MERACIK ITINERARY TERBAIK...",
+            "MENYIAPKAN PREDIKSI CUACA...",
+            "FINISHING PETUALANGANMU..."
+        ];
+
+        const processingTitles = [
+            "Cari hidden gems...",
+            "Lagi racik rute...",
+            "Sedikit lagi siap...",
+            "Hampir selesai..."
+        ];
+
+        function showProcessingModal() {
+            const modal = document.getElementById('processingModal');
+            const bar = document.getElementById('processingBar');
+            const phaseTxt = document.getElementById('loadingPhase');
+            const titleTxt = document.getElementById('processingTitle');
+
+            if (!modal) return;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            let progress = 0;
+            let phaseIdx = 0;
+            let titleIdx = 0;
+
+            // Initial flash
+            phaseTxt.innerText = processingPhases[0];
+            titleTxt.innerText = processingTitles[0];
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 8;
+                if (progress > 98) progress = 98;
+                if (bar) bar.style.width = `${progress}%`;
+
+                // Update phases
+                if (progress > (phaseIdx + 1) * (100 / processingPhases.length) && phaseIdx < processingPhases.length - 1) {
+                    phaseIdx++;
+                    if (phaseTxt) {
+                        phaseTxt.style.opacity = 0;
+                        setTimeout(() => {
+                            phaseTxt.innerText = processingPhases[phaseIdx];
+                            phaseTxt.style.opacity = 1;
+                        }, 300);
+                    }
+                }
+
+                // Update titles
+                if (progress > (titleIdx + 1) * (100 / processingTitles.length) && titleIdx < processingTitles.length - 1) {
+                    titleIdx++;
+                    if (titleTxt) {
+                        titleTxt.style.opacity = 0;
+                        setTimeout(() => {
+                            titleTxt.innerText = processingTitles[titleIdx];
+                            titleTxt.style.opacity = 1;
+                        }, 300);
+                    }
+                }
+            }, 1000);
+
+            window._processingInterval = interval;
+        }
+
+        document.getElementById('promptForm')?.addEventListener('htmx:beforeRequest', showProcessingModal);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const promptInput = document.getElementById('promptInput');
+            if (promptInput) {
+                promptInput.addEventListener('input', updateSubmitButtonState);
+            }
+            // initial check
+            updateSubmitButtonState();
+        });
+    </script>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="fixed inset-0 z-[1000] hidden items-center justify-center">
+        <div class="absolute inset-0 bg-white/95 dark:bg-slate-950/90 backdrop-blur-xl"></div>
+        <div class="relative z-10 flex flex-col items-center text-center px-6 max-w-lg w-full">
+            <!-- Animated Circle/Icon -->
+            <div class="relative mb-12">
+                <div
+                    class="absolute inset-0 bg-gradient-to-tr from-rose-500 to-amber-500 rounded-full blur-3xl animate-pulse-subtle">
+                </div>
+                <div
+                    class="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-tr from-rose-600 via-rose-500 to-amber-400 p-[3px] shadow-2xl animate-float relative z-10">
+                    <div
+                        class="w-full h-full bg-white dark:bg-slate-950 rounded-full flex items-center justify-center overflow-hidden">
+                        <i
+                            class="fas fa-wand-magic-sparkles text-4xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-tr from-rose-400 to-amber-300"></i>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-4 tracking-tighter transition-opacity duration-300"
+                id="processingTitle">
+                Cari hidden gems...
+            </h2>
+            <p class="text-[10px] md:text-xs font-black text-rose-500 tracking-[0.3em] uppercase mb-10 opacity-80"
+                id="processingSub">
+                ULYN AI SEDANG MERACIK PETUALANGANMU
+            </p>
+
+            <!-- Progress Bar -->
+            <div
+                class="w-full max-w-xs h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-6 shadow-inner relative">
+                <div id="processingBar"
+                    class="h-full bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 w-0 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(244,63,94,0.5)]">
+                </div>
+            </div>
+
+            <p class="text-[9px] md:text-[11px] text-slate-500 dark:text-slate-400 font-bold tracking-[0.2em] uppercase transition-opacity duration-300 min-h-[1.5em]"
+                id="loadingPhase">MENGUMPULKAN DATA LOKASI...</p>
+        </div>
+    </div>
+</body>
+
+</html>
