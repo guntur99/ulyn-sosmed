@@ -68,7 +68,12 @@ async fn main() {
         .with_state(state);
 
     // run our app with hyper
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3005));
+    // Railway injects $PORT; fallback to 3005 for local dev
+    let port: u16 = std::env::var("PORT")
+        .unwrap_or_else(|_| "3005".to_string())
+        .parse()
+        .expect("PORT must be a valid number");
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     println!("listening on {}", addr);
     axum::serve(listener, app).await.unwrap();
