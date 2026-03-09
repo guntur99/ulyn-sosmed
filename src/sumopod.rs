@@ -64,6 +64,10 @@ pub struct RouteStep {
 pub struct RouteCandidate {
     pub name: String,
     pub address: String,
+    #[serde(default)]
+    pub latitude: f64,
+    #[serde(default)]
+    pub longitude: f64,
     pub rating: f32,
     pub price_range: Option<String>,
     pub thumbnail_url: Option<String>,

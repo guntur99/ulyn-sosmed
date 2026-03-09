@@ -956,8 +956,8 @@
         {
             name: "{{ step.location_name }}",
                 address: "{{ step.address.as_deref().unwrap_or("") }}",
-                    lat: {{ step.latitude }},
-            lng: {{ step.longitude }},
+                    lat: { { step.latitude } },
+            lng: { { step.longitude } },
             category: "{{ step.category }}",
                 price_range: "{{ step.price_range.as_deref().unwrap_or("") }}"
         },
@@ -1076,8 +1076,8 @@
                             } else {
                                 routeLayers.clearLayers();
                                 var routeCoords = data.routes[0].geometry;
-                                L.geoJSON(routeCoords, { style: { color: '#be123c', weight: 12, opacity: 0.25 }}).addTo(routeLayers);
-                                var polyline = L.geoJSON(routeCoords, { style: { color: '#f43f5e', weight: 6, opacity: 1.0 }}).addTo(routeLayers);
+                                L.geoJSON(routeCoords, { style: { color: '#be123c', weight: 12, opacity: 0.25 } }).addTo(routeLayers);
+                                var polyline = L.geoJSON(routeCoords, { style: { color: '#f43f5e', weight: 6, opacity: 1.0 } }).addTo(routeLayers);
                                 if (!window.hasInitiallyFitted) {
                                     map.fitBounds(polyline.getBounds(), { padding: [100, 100] });
                                     window.hasInitiallyFitted = true;
@@ -1339,10 +1339,12 @@
             }
 
             // Language Logic
-            const savedLang = localStorage.getItem('ulyn_lang');
-            if (savedLang) {
-                updateRouteLanguage(savedLang);
-            }
+            const savedLang = localStorage.getItem('language') || 'id';
+            console.log("Route Page Loaded. Language from localStorage:", savedLang);
+            localStorage.removeItem('ulyn_lang'); // Cleanup old key if any
+            document.documentElement.lang = savedLang;
+            document.documentElement.dir = (savedLang === 'ar' ? 'rtl' : 'ltr');
+            updateRouteLanguage(savedLang);
 
             // Map Initialization
             try {

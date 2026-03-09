@@ -24,3 +24,4 @@ regex = "1"
 rand = "0.8"
 rust-s3 = { version = "0.34", default-features = false, features = ["tokio-rustls-tls"] }
 futures = "0.3.32"
+base64 = "0.22.1"

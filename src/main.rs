@@ -12,6 +12,7 @@ mod handlers;
 mod mayar;
 mod sumopod;
 mod harvester;
+mod auth;
 mod db;
 mod storage;
 
@@ -65,6 +66,9 @@ async fn main() {
         .route("/api/caption", post(handlers::generate_caption_handler))
         .route("/api/checkout", post(handlers::checkout))
         .route("/api/payment/callback", post(handlers::payment_callback))
+        .route("/auth/google", get(auth::google_login))
+        .route("/auth/google/callback", get(auth::google_callback))
+        .route("/auth/logout", get(auth::logout))
         .with_state(state);
 
     // run our app with hyper

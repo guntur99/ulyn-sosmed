@@ -8,12 +8,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::{mayar, sumopod, harvester, db, AppState};
+use crate::{mayar, sumopod, harvester, db, auth, AppState};
 
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct IndexTemplate {
     pub history: Vec<db::RouteHistoryEntry>,
+    pub user: Option<auth::GoogleUser>,
 }
 
 // Route Template
@@ -34,9 +35,13 @@ pub struct GeneratePayload {
     pub lng: Option<f64>,
 }
 
-pub async fn root(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn root(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let user = auth::get_current_user(&headers);
     let history = db::get_route_history(&state.db, 5).await.unwrap_or_default();
-    let template = IndexTemplate { history };
+    let template = IndexTemplate { history, user };
     Html(template.render().unwrap())
 }
 
@@ -195,6 +200,7 @@ pub async fn generate(
 
 pub async fn route_handler(
     State(state): State<AppState>,
+    _headers: HeaderMap,
     Path(id_str): Path<String>,
 ) -> impl IntoResponse {
     let id = match Uuid::parse_str(&id_str) {
