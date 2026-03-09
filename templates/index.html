@@ -133,6 +133,85 @@
 
         <!-- Right Side -->
         <div class="flex items-center gap-3">
+            <!-- History Button -->
+            <div class="relative">
+                <button type="button" id="historyNavBtn" onclick="toggleHistoryPanel()"
+                    class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer relative">
+                    <i class="fas fa-history text-sm"></i>
+                    {% if history.len() > 0 %}
+                    <span
+                        class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[8px] font-black flex items-center justify-center">{{
+                        history.len() }}</span>
+                    {% endif %}
+                </button>
+
+                <!-- History Dropdown Panel -->
+                <div id="historyPanel"
+                    class="hidden absolute right-0 top-13 mt-2 w-80 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[300]">
+                    <!-- Panel Header -->
+                    <div
+                        class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">
+                                Riwayat Rute</p>
+                            <p class="text-[9px] font-bold text-rose-500 uppercase tracking-widest">Recent Itineraries
+                            </p>
+                        </div>
+                        <button onclick="toggleHistoryPanel()"
+                            class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                            <i class="fas fa-times text-[10px]"></i>
+                        </button>
+                    </div>
+
+                    <!-- History List -->
+                    <div class="overflow-y-auto max-h-[60vh] no-scrollbar" style="overflow-y:auto">
+                        {% if history.len() > 0 %}
+                        <div class="py-2">
+                            {% for entry in history %}
+                            <a href="/route/{{ entry.id }}"
+                                class="group flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                                <!-- Step count badge -->
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center shrink-0 group-hover:bg-rose-50 dark:group-hover:bg-rose-900/20 transition-colors">
+                                    <span class="text-sm font-black text-slate-800 dark:text-white leading-none">{{
+                                        entry.step_count }}</span>
+                                    <span
+                                        class="text-[7px] font-bold text-slate-400 uppercase tracking-tighter">Stops</span>
+                                </div>
+                                <!-- Info -->
+                                <div class="flex-1 min-w-0">
+                                    <p
+                                        class="text-[11px] font-black text-slate-800 dark:text-white truncate group-hover:text-rose-500 transition-colors leading-tight">
+                                        {{ entry.title }}</p>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span
+                                            class="text-[9px] font-bold text-slate-400 uppercase truncate flex items-center gap-1">
+                                            <i class="fas fa-map-pin text-rose-400 text-[7px]"></i>
+                                            {{ entry.first_location.as_deref().unwrap_or("Unknown") }}
+                                        </span>
+                                        <span class="w-0.5 h-0.5 rounded-full bg-slate-300 flex-shrink-0"></span>
+                                        <span class="text-[9px] font-medium text-slate-400 flex-shrink-0">{{
+                                            entry.created_at.format("%d %b") }}</span>
+                                    </div>
+                                </div>
+                                <!-- Arrow -->
+                                <div
+                                    class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300 group-hover:bg-rose-500 group-hover:text-white transition-all transform group-hover:rotate-45 flex-shrink-0">
+                                    <i class="fas fa-arrow-right text-[9px]"></i>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="py-10 text-center">
+                            <i class="fas fa-route text-3xl text-slate-200 dark:text-slate-700 mb-3 block"></i>
+                            <p class="text-xs font-bold text-slate-400">Belum ada riwayat rute</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
             <button type="button" id="themeToggleBtn" onclick="toggleTheme()"
                 class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
                 <i class="fas fa-moon" id="themeIcon"></i>
@@ -425,9 +504,6 @@
         <!-- Pricing Section -->
         <div id="pricingSection" class="w-full max-w-4xl z-10 mb-10 pt-10">
             <div class="text-center mb-8">
-                <p data-i18n="upgradeKuota"
-                    class="text-[10px] md:text-xs font-black text-violet-500 dark:text-violet-400 uppercase tracking-[0.2em] mb-2">
-                    Upgrade Kuota</p>
                 <h2 data-i18n="pilihPaket" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">Pilih
                     Paket Premium</h2>
             </div>
@@ -938,12 +1014,25 @@
             document.getElementById('langDropdown').classList.toggle('hidden');
         };
 
-        // Close dropdown when clicking outside
+        // History Panel Toggle
+        window.toggleHistoryPanel = function () {
+            const panel = document.getElementById('historyPanel');
+            if (panel) panel.classList.toggle('hidden');
+        };
+
+        // Close dropdowns when clicking outside
         document.addEventListener('click', function (e) {
-            const btn = document.getElementById('langToggleBtn');
-            const dropdown = document.getElementById('langDropdown');
-            if (dropdown && btn && !btn.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
+            // Close lang dropdown
+            const langBtn = document.getElementById('langToggleBtn');
+            const langDropdown = document.getElementById('langDropdown');
+            if (langDropdown && langBtn && !langBtn.contains(e.target) && !langDropdown.contains(e.target)) {
+                langDropdown.classList.add('hidden');
+            }
+            // Close history panel
+            const historyBtn = document.getElementById('historyNavBtn');
+            const historyPanel = document.getElementById('historyPanel');
+            if (historyPanel && historyBtn && !historyBtn.contains(e.target) && !historyPanel.contains(e.target)) {
+                historyPanel.classList.add('hidden');
             }
         });
 
