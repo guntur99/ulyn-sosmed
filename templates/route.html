@@ -690,6 +690,7 @@
     </div>
 
     <script>
+        const rawRoute = {{ route_json| safe }};
         // --- EDIT ROUTE MODAL LOGIC ---
         var keepRecsChecked = true;
 
@@ -829,32 +830,28 @@
             const itemsContainer = document.getElementById('receipt-items-original');
 
             itemsContainer.innerHTML = '';
-            const destinations = [
-                {% for step in route.steps %}
-        "{{ step.location_name }}",
-            {% endfor %}
-            ].filter(n => n && n.trim().length > 0);
+            const destinations = (rawRoute.steps || []).map(s => s.location_name).filter(n => n && n.trim().length > 0);
 
-        destinations.forEach((name, i) => {
-            const row = document.createElement('div');
-            row.className = "flex text-[10px] font-bold border-b border-rose-100 py-2.5";
-            row.innerHTML = `
+            destinations.forEach((name, i) => {
+                const row = document.createElement('div');
+                row.className = "flex text-[10px] font-bold border-b border-rose-100 py-2.5";
+                row.innerHTML = `
                     <div class="w-8 text-center border-r border-rose-100 text-rose-400">0${i + 1}</div>
                     <div class="flex-1 px-3 border-r border-rose-100 text-slate-700 truncate">${name}</div>
                     <div class="w-14 text-center text-slate-400">---</div>
                 `;
-            itemsContainer.appendChild(row);
-        });
+                itemsContainer.appendChild(row);
+            });
 
-        try {
-            await new Promise(r => setTimeout(r, 100));
-            const dataUrl = await htmlToImage.toPng(scaffold, { quality: 1.0, pixelRatio: 2 });
-            container.innerHTML = `<img src="${dataUrl}" class="w-[280px] h-auto shadow-2xl rounded-sm">`;
-            document.getElementById('btn-download-image').href = dataUrl;
-        } catch (e) {
-            console.error('Receipt generation failed', e);
-            container.innerHTML = `<div class="p-4 text-rose-500 text-xs text-center font-bold">Gagal membuat visual structure.</div>`;
-        }
+            try {
+                await new Promise(r => setTimeout(r, 100));
+                const dataUrl = await htmlToImage.toPng(scaffold, { quality: 1.0, pixelRatio: 2 });
+                container.innerHTML = `<img src="${dataUrl}" class="w-[280px] h-auto shadow-2xl rounded-sm">`;
+                document.getElementById('btn-download-image').href = dataUrl;
+            } catch (e) {
+                console.error('Receipt generation failed', e);
+                container.innerHTML = `<div class="p-4 text-rose-500 text-xs text-center font-bold">Gagal membuat visual structure.</div>`;
+            }
         }
 
         let currentVibe = 'flex';
@@ -871,31 +868,27 @@
         function generateCaption() {
             const btn = document.getElementById('btn-gen-caption');
             const resultArea = document.getElementById('caption-result');
-            const title = "{{ route.title }}";
-            const destinations = [
-                {% for step in route.steps %}
-        "{{ step.location_name }}",
-            {% endfor %}
-            ].filter(n => n && n.trim().length > 0);
+            const title = rawRoute.title || "";
+            const destinations = (rawRoute.steps || []).map(s => s.location_name).filter(n => n && n.trim().length > 0);
 
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
 
-        setTimeout(() => {
-            let text = "";
-            if (currentVibe === 'flex') {
-                text = `Weekend dump from ${title} ✨\n\nChecked off some prime spots today:\n📍 ${destinations.join('\n📍 ')}\n\nFound my peace, lost my phone battery.🎒🌊 #UlynApp #AestheticTravel #TripGoals`;
-            } else if (currentVibe === 'story') {
-                text = `A thread on why ${title} is a vibe 🧵👇\n\n1. It starts with the view.\n2. Then the food at ${destinations[0]}.\n3. And finally, the memories at ${destinations[destinations.length - 1]}.\n\nFull itinerary is up on @ulyn_official. Go check it! 🚀`;
-            } else if (currentVibe === 'witty') {
-                text = `Waktu bilang mau healing, tapi dompet bilang pusing.🤡💸\n\nAnyway, jalan-jalan di ${title} nggak pernah gagal bikin lupa cicilan sebentar. Ke ${destinations[0]} cuma buat liat harganya doang, terus kabur.😂\n\n#HealingTipisTipis #TravelMeme`;
-            } else {
-                text = `Slowing down in ${title}...🍃\n\nSometimes all you need is a new perspective and the cold breeze at ${destinations[0]}. This itinerary hits different.🐚✨\n\n#SoulTrip #Mindfulness #UlynItinerary`;
-            }
-            resultArea.value = text;
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-wand-magic-sparkles mr-2"></i> <span data-i18n="genCaption">Buatkan Caption Viral</span>';
-        }, 800);
+            setTimeout(() => {
+                let text = "";
+                if (currentVibe === 'flex') {
+                    text = `Weekend dump from ${title} ✨\n\nChecked off some prime spots today:\n📍 ${destinations.join('\n📍 ')}\n\nFound my peace, lost my phone battery.🎒🌊 #UlynApp #AestheticTravel #TripGoals`;
+                } else if (currentVibe === 'story') {
+                    text = `A thread on why ${title} is a vibe 🧵👇\n\n1. It starts with the view.\n2. Then the food at ${destinations[0]}.\n3. And finally, the memories at ${destinations[destinations.length - 1]}.\n\nFull itinerary is up on @ulyn_official. Go check it! 🚀`;
+                } else if (currentVibe === 'witty') {
+                    text = `Waktu bilang mau healing, tapi dompet bilang pusing.🤡💸\n\nAnyway, jalan-jalan di ${title} nggak pernah gagal bikin lupa cicilan sebentar. Ke ${destinations[0]} cuma buat liat harganya doang, terus kabur.😂\n\n#HealingTipisTipis #TravelMeme`;
+                } else {
+                    text = `Slowing down in ${title}...🍃\n\nSometimes all you need is a new perspective and the cold breeze at ${destinations[0]}. This itinerary hits different.🐚✨\n\n#SoulTrip #Mindfulness #UlynItinerary`;
+                }
+                resultArea.value = text;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-wand-magic-sparkles mr-2"></i> <span data-i18n="genCaption">Buatkan Caption Viral</span>';
+            }, 800);
         }
 
         function copyCaption(e) {
@@ -951,18 +944,7 @@
         var routeLayers = null;
 
         // Route Data
-        var baseSteps = [
-            {% for step in route.steps %}
-        {
-            name: "{{ step.location_name }}",
-                address: "{{ step.address.as_deref().unwrap_or("") }}",
-                    lat: { { step.latitude } },
-            lng: { { step.longitude } },
-            category: "{{ step.category }}",
-                price_range: "{{ step.price_range.as_deref().unwrap_or("") }}"
-        },
-        {% endfor %}
-        ];
+        var baseSteps = rawRoute.steps || [];
 
         var baseLatlngs = baseSteps.map(s => [s.lat, s.lng]);
         var currentTravelMode = 'driving';

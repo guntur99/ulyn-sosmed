@@ -23,6 +23,7 @@ pub struct IndexTemplate {
 pub struct RouteTemplate {
     pub _id: String,
     pub route: sumopod::RouteData,
+    pub route_json: String,
     pub current_date: String,
     pub google_maps_api_key: String,
 }
@@ -210,9 +211,11 @@ pub async fn route_handler(
 
     if let Ok(Some(route_json)) = db::find_route_by_id(&state.db, id).await {
         if let Ok(route_data) = serde_json::from_value::<sumopod::RouteData>(route_json) {
+            let route_json_str = serde_json::to_string(&route_data).unwrap_or_else(|_| "{}".to_string());
             let template = RouteTemplate {
                 _id: id_str.clone(),
                 route: route_data,
+                route_json: route_json_str,
                 current_date: chrono::Local::now().format("%d %b %Y").to_string(),
                 google_maps_api_key: std::env::var("GOOGLE_MAPS_API_KEY").unwrap_or_default(),
             };
