@@ -16,6 +16,8 @@ mod harvester;
 mod auth;
 mod db;
 mod storage;
+mod mail;
+mod email_templates;
 
 #[derive(Clone)]
 pub struct AppState {

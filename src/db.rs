@@ -112,6 +112,14 @@ pub async fn upsert_user(
     .await
 }
 
+/// Find a user by ID
+pub async fn find_user_by_id(pool: &PgPool, id: Uuid) -> Result<Option<User>, sqlx::Error> {
+    sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+        .bind(id)
+        .fetch_optional(pool)
+        .await
+}
+
 /// Create a topup record
 pub async fn create_topup(
     pool: &PgPool,

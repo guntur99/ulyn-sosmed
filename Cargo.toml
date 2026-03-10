@@ -25,3 +25,4 @@ rand = "0.8"
 rust-s3 = { version = "0.34", default-features = false, features = ["tokio-rustls-tls"] }
 futures = "0.3.32"
 base64 = "0.22.1"
+lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-rustls", "tokio1", "hostname", "builder", "webpki-roots", "ring"] }

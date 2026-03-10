@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::{mayar, sumopod, harvester, db, auth, AppState};
+use crate::{mayar, sumopod, harvester, db, auth, mail, email_templates, AppState};
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -452,6 +452,7 @@ pub async fn harvest(
 pub struct CheckoutPayload {
     pub tier: String,
     pub amount: f64,
+    pub lang: Option<String>,
 }
 
 pub async fn checkout(
@@ -477,8 +478,11 @@ pub async fn checkout(
     let customer_email = u.email.clone();
     let invoice_number = format!("ULYN-{}-{}", &u.id.to_string()[..4].to_uppercase(), payload.tier.to_uppercase());
 
-    // Record the topup attempt in database
-    let _ = db::create_topup(&state.db, u.id, payload.amount, &payload.tier, &invoice_number, None).await;
+    // Record the topup attempt in database with language preference
+    let payload_json = serde_json::json!({
+        "lang": payload.lang.unwrap_or_else(|| "id".to_string())
+    });
+    let _ = db::create_topup(&state.db, u.id, payload.amount, &payload.tier, &invoice_number, Some(&payload_json)).await;
 
     match mayar::create_invoice(&customer_name, &customer_email, payload.amount, &invoice_number).await {
         Ok(payment_url) => {
@@ -506,6 +510,7 @@ pub async fn payment_callback(
             let data = payload_val.get("data").unwrap_or(&payload_val);
             let status = data.get("status").and_then(|s| s.as_str()).unwrap_or("");
             let reference = data.get("reference").and_then(|s| s.as_str()).unwrap_or("");
+            let payment_channel = data.get("payment_channel").and_then(|s| s.as_str());
 
             if status == "SUCCESS" || status == "PAID" {
                 tracing::info!("[WEBHOOK] Processing success for ref: {}", reference);
@@ -535,6 +540,18 @@ pub async fn payment_callback(
                     tracing::info!("Webhook: Topup {} already processed", reference);
                     return StatusCode::OK.into_response();
                 }
+
+                // EXTRACT LANG BEFORE OVERWRITING PAYLOAD
+                let user_lang = topup.payload.as_ref()
+                    .and_then(|p| p.get("lang"))
+                    .and_then(|l| l.as_str())
+                    .map(|s| s.to_string());
+
+                // Fetch User for email
+                let user = match db::find_user_by_id(&state.db, topup.user_id).await {
+                    Ok(Some(u)) => Some(u),
+                    _ => None,
+                };
 
                 // 2. Determine Credits
                 let credits_to_add = match topup.tier.as_str() {
@@ -580,6 +597,32 @@ pub async fn payment_callback(
                 }
 
                 tracing::info!("Webhook SUCCESS: Added {} credits to user {}", credits_to_add, topup.user_id);
+
+                // 5. Send Email Notification
+                if let Some(u) = user {
+                    let email_body = email_templates::get_topup_success_email(
+                        &u.name,
+                        &topup.amount.to_string(),
+                        &topup.tier,
+                        &topup.reference,
+                        payment_channel.unwrap_or("Mayar"),
+                        user_lang.as_deref()
+                    );
+                    
+                    let subject = match user_lang.as_deref() {
+                        Some("id") => "Topup Berhasil - Ulyn AI",
+                        Some("ja") => "入金完了 - Ulyn AI",
+                        Some("ko") => "충전 성공 - Ulyn AI",
+                        Some("zh") => "充值成功 - Ulyn AI",
+                        Some("ru") => "Пополнение успешно - Ulyn AI",
+                        Some("nl") => "Opwaardering geslaagd - Ulyn AI",
+                        Some("af") => "Topup Suksesvol - Ulyn AI",
+                        Some("ar") => "تم الشحن بنجاح - Ulyn AI",
+                        _ => "Topup Successful - Ulyn AI",
+                    };
+
+                    let _ = mail::send_html_email(Some(&state), &u.email, subject, &email_body).await;
+                }
             }
         }
     }
