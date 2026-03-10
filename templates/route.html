@@ -295,6 +295,10 @@
                     class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all">
                     <i class="fas fa-moon text-sm" id="themeIcon"></i>
                 </button>
+                <button onclick="togglePersonaVoice()" id="personaVoiceBtn" data-i18n-title="personaVoice"
+                    class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 flex items-center justify-center shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all">
+                    <i class="fas fa-volume-up text-sm" id="voiceIcon"></i>
+                </button>
                 <button onclick="openShareModal(event)" title="Share ke Sosmed"
                     class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 flex items-center justify-center shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all">
                     <i class="fas fa-share-alt text-sm"></i>
@@ -674,7 +678,7 @@
                     class="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <label class="flex items-center gap-3 cursor-pointer group">
                         <div class="relative">
-                            <input type="checkbox" id="keepRecsCheckbox" checked class="sr-only peer"
+                            <input type="checkbox" id="keepRecsCheckbox" class="sr-only peer"
                                 onchange="toggleKeepRecs(this.checked)">
                             <div
                                 class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500">
@@ -866,8 +870,13 @@
                     <div id="receipt-preview-container"
                         class="relative group cursor-pointer shadow-2xl rounded-sm overflow-hidden border border-slate-100 dark:border-slate-800">
                         <div
-                            class="w-[280px] h-[400px] bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 animate-pulse rounded-sm">
-                            <span data-i18n="genVisual">Generating Visual...</span>
+                            class="w-[280px] h-[400px] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center text-slate-400 p-6 rounded-sm text-center">
+                            <i class="fas fa-receipt text-3xl mb-4 opacity-20"></i>
+                            <p class="text-[10px] font-bold uppercase tracking-widest mb-4">Ready to Generate</p>
+                            <button onclick="renderReceiptImage()" id="btn-gen-receipt"
+                                class="px-6 py-2.5 bg-rose-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all">
+                                Generate Route Receipt
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1232,18 +1241,20 @@
         }
 
         // --- EDIT ROUTE MODAL LOGIC ---
-        var keepRecsChecked = true;
+        var keepRecsChecked = false;
 
         function openEditRouteModal(e) {
             if (e && e.preventDefault) e.preventDefault();
             const modal = document.getElementById('editRouteModal');
             if (!modal) return;
-            // Pre-fill with current names if checkbox is checked
+            // Pre-fill
             document.getElementById('editRoutePrompt').value = '';
             document.getElementById('editRouteSosmedLinks').value = '';
-            // Reset checkbox
-            keepRecsChecked = true;
-            updateCheckboxUI();
+            // Reset checkbox (Default to FALSE as per user request)
+            keepRecsChecked = false;
+            const cb = document.getElementById('keepRecsCheckbox');
+            if (cb) cb.checked = false;
+
             modal.classList.remove('hidden');
             // Focus textarea
             setTimeout(() => document.getElementById('editRoutePrompt').focus(), 100);
@@ -1255,31 +1266,16 @@
             if (modal) modal.classList.add('hidden');
         }
 
-        function toggleCheckbox() {
-            keepRecsChecked = !keepRecsChecked;
-            updateCheckboxUI();
-        }
-
-        function updateCheckboxUI() {
-            const icon = document.getElementById('checkIcon');
-            const checkDiv = icon ? icon.parentElement : null;
-            if (!icon || !checkDiv) return;
-
-            if (keepRecsChecked) {
-                checkDiv.style.backgroundColor = '#3b82f6';
-                checkDiv.style.borderColor = '#3b82f6';
-                icon.style.display = '';
-            } else {
-                checkDiv.style.backgroundColor = '';
-                checkDiv.style.borderColor = '';
-                icon.style.display = 'none';
-            }
+        function toggleKeepRecs(checked) {
+            keepRecsChecked = checked;
         }
 
         function submitEditRoute() {
             const addlPrompt = document.getElementById('editRoutePrompt').value.trim();
             const sosmedLinks = document.getElementById('editRouteSosmedLinks').value.trim();
             const btn = document.getElementById('editRouteSubmitBtn');
+            const lang = localStorage.getItem('language') || 'id';
+            const dict = routeTranslations[lang] || routeTranslations.id;
 
             // Allow if there's a prompt, links, OR we're keeping existing recommendations
             const canSubmit = addlPrompt || sosmedLinks || (keepRecsChecked && baseSteps.length > 0);
@@ -1295,8 +1291,9 @@
             let finalPrompt = addlPrompt || '';
             if (keepRecsChecked && baseSteps.length > 0) {
                 const names = baseSteps.map(s => s.location_name).join(', ');
-                const keepNote = `Pertahankan rekomendasi berikut jika memungkinkan: ${names}.`;
-                finalPrompt = finalPrompt ? `${finalPrompt}. ${keepNote}` : keepNote;
+                const keepNoteTemplate = dict.keepPrompt || "REQUIRED: Keep these destinations in the route: {0}. Do not remove or replace them.";
+                const keepNote = keepNoteTemplate.replace('{0}', names);
+                finalPrompt = finalPrompt ? `${finalPrompt}\n\n${keepNote}` : keepNote;
             }
 
             // Show loading state
@@ -1342,13 +1339,53 @@
         }
 
         // --- SOCIAL SHARE LOGIC ---
+        let isSpeaking = false;
+        function togglePersonaVoice() {
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+                isSpeaking = false;
+                document.getElementById('voiceIcon').className = 'fas fa-volume-up text-sm';
+                return;
+            }
+
+            const tips = baseSteps.map(s => s.tips).filter(t => t && t.trim().length > 0).join('. ');
+            if (!tips) return;
+
+            const utterance = new SpeechSynthesisUtterance(tips);
+            const lang = localStorage.getItem('language') || 'id';
+
+            // Set voice based on language
+            utterance.lang = lang;
+            const voices = window.speechSynthesis.getVoices();
+            const voice = voices.find(v => v.lang.startsWith(lang));
+            if (voice) utterance.voice = voice;
+
+            utterance.onstart = () => {
+                isSpeaking = true;
+                const icon = document.getElementById('voiceIcon');
+                if (icon) icon.className = 'fas fa-stop text-sm text-rose-500 animate-pulse';
+            };
+            utterance.onend = () => {
+                isSpeaking = false;
+                const icon = document.getElementById('voiceIcon');
+                if (icon) icon.className = 'fas fa-volume-up text-sm';
+            };
+            utterance.onerror = () => {
+                isSpeaking = false;
+                const icon = document.getElementById('voiceIcon');
+                if (icon) icon.className = 'fas fa-volume-up text-sm';
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
         function openShareModal(e) {
             if (e && e.preventDefault) e.preventDefault();
             console.log("Opening share modal...");
             const modal = document.getElementById('socialShareModal');
             if (modal) {
                 modal.classList.remove('hidden');
-                renderReceiptImage().catch(e => console.error("Receipt error:", e));
+                // Removed automatic renderReceiptImage() to save quota
             } else {
                 console.error("socialShareModal element not found");
             }
@@ -1387,6 +1424,12 @@
             const container = document.getElementById('receipt-preview-container');
             const scaffold = document.getElementById('receipt-scaffold-original');
             const itemsContainer = document.getElementById('receipt-items-original');
+
+            // Show loading
+            container.innerHTML = `<div class="w-[280px] h-[400px] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center text-slate-400 p-6 rounded-sm text-center">
+                <i class="fas fa-circle-notch fa-spin text-2xl mb-4 text-rose-500"></i>
+                <p class="text-[10px] font-bold uppercase tracking-widest animate-pulse">Generating your visual...</p>
+            </div>`;
 
             // Consume Quota first
             try {
@@ -2054,7 +2097,9 @@
                 socialLinksPlaceholder: 'https://www.instagram.com/p/... atau link TikTok',
                 destHidden: 'Destinasi Tersembunyi', restore: 'Pulihkan', stepLabel: 'STEP',
                 seePersonaTips: 'LIHAT TIPS DARI PERSONA KAMU', mainRecommendation: 'REKOMENDASI UTAMA',
-                orChooseBackup: 'ATAU PILIH KURSI CADANGAN', slideToRight: 'Slide ke kanan'
+                orChooseBackup: 'ATAU PILIH KURSI CADANGAN', slideToRight: 'Slide ke kanan',
+                keepPrompt: "WAJIB pertahankan destinasi berikut: {0}. Jangan ganti atau hapus dari rute baru.",
+                personaVoice: "Mode Persona Suara"
             },
             en: {
                 regGiftLabel: 'SPECIAL GIFT', regGift: 'Get 7 Free Credits on Your First Registration',
@@ -2087,7 +2132,9 @@
                 socialLinksPlaceholder: 'https://www.instagram.com/p/... or TikTok link',
                 destHidden: 'Hidden Destination', restore: 'Restore', stepLabel: 'STEP',
                 seePersonaTips: 'VIEW TIPS FROM YOUR PERSONA', mainRecommendation: 'MAIN RECOMMENDATION',
-                orChooseBackup: 'OR CHOOSE BACKUP CANDIDATES', slideToRight: 'Slide to right'
+                orChooseBackup: 'OR CHOOSE BACKUP CANDIDATES', slideToRight: 'Slide to right',
+                keepPrompt: "REQUIRED: Keep these destinations in the route: {0}. Do not remove or replace them.",
+                personaVoice: "Persona Voice Mode"
             },
             ja: {
                 regGiftLabel: 'スペシャルギフト', regGift: '初回登録で7つの無料クレジットをゲット',
@@ -2120,7 +2167,9 @@
                 socialLinksPlaceholder: 'https://www.instagram.com/p/... または TikTokリンク',
                 destHidden: '非表示の目的地', restore: '復元', stepLabel: 'ステップ',
                 seePersonaTips: 'ペルソナからのヒントを表示', mainRecommendation: '主な推奨事項',
-                orChooseBackup: 'またはバックアップ候補を選択', slideToRight: '右にスライド'
+                orChooseBackup: 'またはバックアップ候補を選択', slideToRight: '右にスライド',
+                keepPrompt: "重要：以下の目的地を必ず保持してください：{0}。これらを削除したり変更したりしないでください。",
+                personaVoice: "ペルソナボイスモード"
             },
             ko: {
                 regGiftLabel: '특별 선물', regGift: '첫 회원가입 시 7개 무료 크레딧 증정',
@@ -2153,7 +2202,9 @@
                 socialLinksPlaceholder: 'https://www.instagram.com/p/... 또는 틱톡 링크',
                 destHidden: '숨겨진 목적지', restore: '복구', stepLabel: '단계',
                 seePersonaTips: '페르소나 팁 보기', mainRecommendation: '주요 권장 사항',
-                orChooseBackup: '또는 예비 후보 선택', slideToRight: '오른쪽으로 슬라이드'
+                orChooseBackup: '또는 예비 후보 선택', slideToRight: '오른쪽으로 슬라이드',
+                keepPrompt: "필수: 다음 목적지를 반드시 유지하십시오: {0}. 이 목적지들을 삭제하거나 변경하지 마십시오.",
+                personaVoice: "페르소나 보이스 모드"
             },
             zh: {
                 regGiftLabel: '特别礼品', regGift: '首次注册即可获赠 7 个免费积分',
@@ -2186,7 +2237,9 @@
                 socialLinksPlaceholder: 'https://www.instagram.com/p/... 或 TikTok 链接',
                 destHidden: '隐藏目的地', restore: '恢复', stepLabel: '步骤',
                 seePersonaTips: '查看人物角色提示', mainRecommendation: '主要建议',
-                orChooseBackup: '或选择备选方案', slideToRight: '向右滑动'
+                orChooseBackup: '或选择备选方案', slideToRight: '向右滑动',
+                keepPrompt: "必选：请务必在该路线中保留以下目的地：{0}。请勿进行删除或更换。",
+                personaVoice: "人物角色语音模式"
             },
             ru: {
                 regGiftLabel: 'СПЕЦИАЛЬНЫЙ ПОДАРОК', regGift: 'Получите 7 бесплатных кредитов при первой регистрации',
@@ -2219,7 +2272,9 @@
                 socialLinksPlaceholder: 'https://www.instagram.com/p/... или ссылка на TikTok',
                 destHidden: 'Скрытое место', restore: 'Восстановить', stepLabel: 'ШАГ',
                 seePersonaTips: 'ПОСМОТРЕТЬ СОВЕТЫ ПЕРСОНАЖА', mainRecommendation: 'ГЛАВНАЯ РЕКОМЕНДАЦИЯ',
-                orChooseBackup: 'ИЛИ ВЫБЕРИТЕ ЗАПАСНЫЕ ВАРИАНТЫ', slideToRight: 'Слайд вправо'
+                orChooseBackup: 'ИЛИ ВЫБЕРИТЕ ЗАПАСНЫЕ ВАРИАНТЫ', slideToRight: 'Слайд вправо',
+                keepPrompt: "ОБЯЗАТЕЛЬНО: Сохраните следующие пункты назначения: {0}. Не удаляйте и не заменяйте их.",
+                personaVoice: "Голосовой режим персонажа"
             },
             nl: {
                 regGiftLabel: 'SPECIALE CADEAU', regGift: 'Ontvang 7 gratis credits bij je eerste registratie',
@@ -2252,7 +2307,9 @@
                 socialLinksPlaceholder: 'https://www.instagram.com/p/... of TikTok link',
                 destHidden: 'Verborgen Bestemming', restore: 'Herstellen', stepLabel: 'STAP',
                 seePersonaTips: 'BEKIJK TIPS VAN JE PERSONA', mainRecommendation: 'BELANGRIJKSTE AANBEVELING',
-                orChooseBackup: 'OF KIES RESERVE CANDIDATEN', slideToRight: 'Schuif naar rechts'
+                orChooseBackup: 'OF KIES RESERVE CANDIDATEN', slideToRight: 'Schuif naar rechts',
+                keepPrompt: "VERPLICHT: Behoud deze bestemmingen: {0}. Verwijder of vervang deze niet.",
+                personaVoice: "Persona Stemmodus"
             },
             af: {
                 regGiftLabel: 'SPESIALE GESKENK', regGift: 'Kry 7 gratis krediete by jou eerste registrasie',
@@ -2285,7 +2342,9 @@
                 socialLinksPlaceholder: 'https://www.instagram.com/p/... of TikTok-skakel',
                 destHidden: 'Verborge Bestemming', restore: 'Herstel', stepLabel: 'STAP',
                 seePersonaTips: 'WYK TIPS VAN JOU PERSONA', mainRecommendation: 'HOOF AANBEVELING',
-                orChooseBackup: 'OF KIES RUGSTEUN KANDIDATE', slideToRight: 'Skuif na regs'
+                orChooseBackup: 'OF KIES RUGSTEUN KANDIDATE', slideToRight: 'Skuif na regs',
+                keepPrompt: "VERPLIGTEND: Hou hierdie bestemmings: {0}. Moenie hierdie bestemmings verwyder of vervang nie.",
+                personaVoice: "Persona Stem-modus"
             },
             ar: {
                 regGiftLabel: 'هدية خاصة', regGift: 'احصل على 7 أرصدة مجانية عند التسجيل لأول مرة',
@@ -2318,7 +2377,9 @@
                 socialLinksPlaceholder: 'رابط انستقرام أو تيك توك',
                 destHidden: 'وجهة مخفية', restore: 'استعادة', stepLabel: 'خطوة',
                 seePersonaTips: 'عرض نصائح شخصيتك', mainRecommendation: 'التوصية الرئيسية',
-                orChooseBackup: 'أو اختر المرشحين الاحتياطيين', slideToRight: 'اسحب لليمين'
+                orChooseBackup: 'أو اختر المرشحين الاحتياطيين', slideToRight: 'اسحب لليمين',
+                keepPrompt: "مهم: يجب الحفاظ على هذه الوجهات: {0}. لا تقم بإزالتها أو استبدالها.",
+                personaVoice: "وضع صوت الشخصية"
             },
         };
 
@@ -2334,6 +2395,12 @@
                 const key = el.getAttribute('data-i18n-placeholder');
                 if (dict[key]) {
                     el.placeholder = dict[key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                if (dict[key]) {
+                    el.title = dict[key];
                 }
             });
             if (lang === 'ar') {

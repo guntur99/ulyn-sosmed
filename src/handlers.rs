@@ -127,8 +127,8 @@ pub async fn generate(
         None
     };
 
-    // Check Quota
-    match db::check_and_consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), db::FeatureType::Route).await {
+    // Check Quota (but don't consume yet)
+    match db::check_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), db::FeatureType::Route).await {
         Ok(true) => (),
         Ok(false) => return (StatusCode::FORBIDDEN, HeaderMap::new(), "Kuota harian habis. Silahkan topup atau kembali besok.").into_response(),
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), format!("Quota check failed: {}", e)).into_response(),
@@ -301,6 +301,9 @@ pub async fn generate(
                 route_data.steps.len() as i32,
                 &route_json,
             ).await;
+
+            // SUCCESS: Consume Quota now
+            let _ = db::consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), db::FeatureType::Route).await;
 
             let mut response_headers = HeaderMap::new();
             if headers.contains_key("HX-Request") {
@@ -533,7 +536,12 @@ pub async fn payment_callback(
             let status = data.get("status").and_then(|s| s.as_str()).unwrap_or("");
             let payment_channel = data.get("payment_channel").and_then(|s| s.as_str());
             
-            // Robust Reference Extraction
+            // The following lines were part of the instruction but refer to variables (db_user, guest_id)
+            // not present in this function's scope. They have been omitted to maintain syntactic correctness.
+            // // SUCCESS: Consume Quota now
+            // let _ = db::consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref()).await;
+            
+            // Return Redirect to route page or return HTML partial?
             let mut reference = data.get("reference").and_then(|s| s.as_str()).unwrap_or("").to_string();
             if reference.is_empty() {
                 if let Some(desc) = data.get("productDescription").and_then(|s| s.as_str()) {
@@ -711,8 +719,8 @@ pub async fn generate_caption_handler(
         None
     };
 
-    // Check Quota
-    match db::check_and_consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), db::FeatureType::Caption).await {
+    // Check Quota (No pre-deduct)
+    match db::check_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), db::FeatureType::Caption).await {
         Ok(true) => (),
         Ok(false) => return (StatusCode::FORBIDDEN, Json(CaptionResponse { caption: None, error: Some("Kuota harian habis. Silahkan topup atau kembali besok.".to_string()) })),
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(CaptionResponse { caption: None, error: Some(format!("Quota check failed: {}", e)) })),
@@ -721,6 +729,8 @@ pub async fn generate_caption_handler(
     let lang = payload.lang.clone().unwrap_or_else(|| "id".to_string());
     match sumopod::generate_caption(&state.client, &payload.vibe, &payload.places, &lang).await {
         Ok(caption) => {
+            // SUCCESS: Consume Quota
+            let _ = db::consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), db::FeatureType::Caption).await;
             (StatusCode::OK, Json(CaptionResponse { caption: Some(caption), error: None }))
         }
         Err(e) => {

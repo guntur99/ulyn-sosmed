@@ -253,59 +253,80 @@ pub enum FeatureType {
 }
 
 
-/// Check and consume quota for a user (guest or auth).
-/// Now uses a lifetime credit system for users and a lifetime trial for guests.
+pub async fn check_quota(
+    pool: &sqlx::PgPool,
+    redis: &redis::Client,
+    user: Option<&User>,
+    guest_id: Option<&str>,
+    feature: FeatureType,
+) -> Result<bool, String> {
+    if let Some(u) = user {
+        let (credits,): (i32,) = sqlx::query_as("SELECT credits FROM users WHERE id = $1")
+            .bind(u.id)
+            .fetch_one(pool)
+            .await
+            .map_err(|e| format!("DB Error: {}", e))?;
+        return Ok(credits > 0);
+    } else if let Some(gid) = guest_id {
+        let feature_str = match feature {
+            FeatureType::Route => "route",
+            FeatureType::Caption => "caption",
+            FeatureType::Receipt => "receipt",
+        };
+        let redis_key = format!("guest_usage:{}:{}", gid, feature_str);
+        let limit = 3;
+        let mut conn = redis.get_multiplexed_tokio_connection().await
+            .map_err(|e| format!("Redis connection error: {}", e))?;
+        let current_usage: i32 = redis::cmd("GET").arg(&redis_key).query_async::<Option<i32>>(&mut conn)
+            .await.unwrap_or(Some(0)).unwrap_or(0);
+        return Ok(current_usage < limit);
+    }
+    Err("No user identification provided".into())
+}
+
+pub async fn consume_quota(
+    pool: &sqlx::PgPool,
+    redis: &redis::Client,
+    user: Option<&User>,
+    guest_id: Option<&str>,
+    feature: FeatureType,
+) -> Result<bool, String> {
+    if let Some(u) = user {
+        sqlx::query("UPDATE users SET credits = credits - 1 WHERE id = $1 AND credits > 0")
+            .bind(u.id)
+            .execute(pool)
+            .await
+            .map_err(|e| format!("DB Update Error: {}", e))?;
+        return Ok(true);
+    } else if let Some(gid) = guest_id {
+        let feature_str = match feature {
+            FeatureType::Route => "route",
+            FeatureType::Caption => "caption",
+            FeatureType::Receipt => "receipt",
+        };
+        let redis_key = format!("guest_usage:{}:{}", gid, feature_str);
+        let mut conn = redis.get_multiplexed_tokio_connection().await
+            .map_err(|e| format!("Redis connection error: {}", e))?;
+        let _: () = redis::cmd("INCR").arg(&redis_key).query_async(&mut conn)
+            .await.map_err(|e| format!("Redis error: {}", e))?;
+        return Ok(true);
+    }
+    Err("No identification".into())
+}
+
+/// Legacy wrapper
 pub async fn check_and_consume_quota(
     pool: &sqlx::PgPool,
     redis: &redis::Client,
     user: Option<&User>,
     guest_id: Option<&str>,
-    _feature: FeatureType, // Feature logic is now unified into general credits
+    feature: FeatureType,
 ) -> Result<bool, String> {
-    if let Some(u) = user {
-        // Authenticated users use credits from DB
-        let row_user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
-            .bind(u.id)
-            .fetch_one(pool)
-            .await
-            .map_err(|e| format!("DB Error: {}", e))?;
-
-        if row_user.credits <= 0 {
-            return Ok(false);
-        }
-
-        sqlx::query("UPDATE users SET credits = credits - 1 WHERE id = $1")
-            .bind(u.id)
-            .execute(pool)
-            .await
-            .map_err(|e| format!("DB Update Error: {}", e))?;
-        
-        return Ok(true);
-    } else if let Some(gid) = guest_id {
-        // Guests use a lifetime Redis key (no date)
-        let redis_key = format!("guest_usage:{}", gid);
-        let limit = 3;
-
-        let mut conn = redis.get_multiplexed_tokio_connection().await
-            .map_err(|e| format!("Redis connection error: {}", e))?;
-
-        let current_usage: i32 = redis::cmd("GET").arg(&redis_key).query_async::<Option<i32>>(&mut conn)
-            .await
-            .map_err(|e| format!("Redis GET error: {}", e))?
-            .unwrap_or(0);
-
-        if current_usage >= limit {
-            return Ok(false);
-        }
-
-        let _: () = redis::cmd("INCR").arg(&redis_key).query_async(&mut conn)
-            .await
-            .map_err(|e| format!("Redis INCR error: {}", e))?;
-        
-        return Ok(true);
+    if check_quota(pool, redis, user, guest_id, feature.clone()).await? {
+        consume_quota(pool, redis, user, guest_id, feature).await
+    } else {
+        Ok(false)
     }
-
-    Err("No user identification provided".into())
 }
 
 #[derive(serde::Serialize)]
@@ -327,14 +348,12 @@ pub async fn get_quota_status(
     guest_id: Option<&str>,
 ) -> Result<QuotaStatus, String> {
     if let Some(u) = user {
-        // Authenticated user: get latest credits from DB
         let latest: (i32,) = sqlx::query_as("SELECT credits FROM users WHERE id = $1")
             .bind(u.id)
             .fetch_one(pool)
             .await
             .map_err(|e| format!("DB query error: {}", e))?;
 
-        // In the new system, used/limit is per action, but we can show it as remaining
         return Ok(QuotaStatus {
             route_used: 0, 
             route_limit: latest.0,
@@ -344,21 +363,30 @@ pub async fn get_quota_status(
             receipt_limit: latest.0,
         });
     } else if let Some(gid) = guest_id {
-        let redis_key = format!("guest_usage:{}", gid);
         let mut conn = redis.get_multiplexed_tokio_connection().await
             .map_err(|e| format!("Redis connection error: {}", e))?;
 
-        let used: i32 = redis::cmd("GET").arg(&redis_key).query_async::<Option<i32>>(&mut conn)
-            .await.unwrap_or(Some(0)).unwrap_or(0);
+        let get_usage = |f: &str| {
+            let key = format!("guest_usage:{}:{}", gid, f);
+            let mut c = conn.clone();
+            async move {
+                redis::cmd("GET").arg(&key).query_async::<Option<i32>>(&mut c)
+                    .await.unwrap_or(Some(0)).unwrap_or(0)
+            }
+        };
+
+        let r_used = get_usage("route").await;
+        let c_used = get_usage("caption").await;
+        let rc_used = get_usage("receipt").await;
         
         let limit = 3;
 
         return Ok(QuotaStatus {
-            route_used: used,
+            route_used: r_used,
             route_limit: limit,
-            caption_used: used,
+            caption_used: c_used,
             caption_limit: limit,
-            receipt_used: used,
+            receipt_used: rc_used,
             receipt_limit: limit,
         });
     }
