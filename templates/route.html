@@ -491,11 +491,13 @@
 
                         {% match step.thumbnail_url %}
                         {% when Some with (thumb) %}
+                        {% if !thumb.is_empty() %}
                         <div id="video-preview-{{ index }}"
                             class="relative h-64 cursor-pointer group/vid rounded-3xl overflow-hidden mt-4"
                             data-video-url="{% match step.video_url %}{% when Some with (vu) %}{{ vu }}{% when None %}{% endmatch %}"
                             onclick="openVideoModal(this.dataset.videoUrl)">
                             <img src="{{ thumb }}"
+                                onerror="this.closest('#video-preview-{{ index }}').classList.add('hidden')"
                                 class="w-full h-full object-cover transition-transform duration-700 brightness-90 group-hover/vid:scale-110">
                             <div
                                 class="absolute inset-0 bg-black/20 group-hover/vid:bg-black/10 transition-colors flex items-center justify-center">
@@ -505,6 +507,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                         {% when None %}
                         {% endmatch %}
 
