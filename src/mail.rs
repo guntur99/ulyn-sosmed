@@ -17,11 +17,11 @@ struct MailtrapPayload {
     category: Option<String>,
 }
 
-pub async fn send_html_email(_state: Option<&crate::AppState>, to: &str, subject: &str, html_content: &str) -> Result<(), String> {
+pub async fn send_html_email(state: Option<&crate::AppState>, to: &str, subject: &str, html_content: &str) -> Result<(), String> {
     // Check if we should use API (Mailtrap)
     if let Ok(api_token) = env::var("MAILTRAP_API_TOKEN") {
         if !api_token.is_empty() {
-             match send_via_api(to, subject, html_content, &api_token).await {
+             match send_via_api(state, to, subject, html_content, &api_token).await {
                 Ok(_) => return Ok(()),
                 Err(e) => {
                     tracing::warn!("Mailtrap API failed: {}. Falling back to SMTP...", e);
@@ -34,7 +34,7 @@ pub async fn send_html_email(_state: Option<&crate::AppState>, to: &str, subject
     send_via_smtp(to, subject, html_content).await
 }
 
-async fn send_via_api(to: &str, subject: &str, html_content: &str, api_token: &str) -> Result<(), String> {
+async fn send_via_api(state: Option<&crate::AppState>, to: &str, subject: &str, html_content: &str, api_token: &str) -> Result<(), String> {
     tracing::info!("Attempting to send email via Mailtrap API to {}", to);
     let from_email = env::var("MAIL_FROM_ADDRESS").unwrap_or_else(|_| "team@ulyn.fun".to_string());
     let from_name = env::var("MAIL_FROM_NAME").unwrap_or_else(|_| "Ulyn AI".to_string());
@@ -53,17 +53,26 @@ async fn send_via_api(to: &str, subject: &str, html_content: &str, api_token: &s
         category: Some("Transaction".to_string()),
     };
 
-    let client = Client::new();
-    let response = client.post("https://send.api.mailtrap.io/api/send")
-        .header("Authorization", format!("Bearer {}", api_token))
-        .header("Content-Type", "application/json")
-        .json(&payload)
-        .send()
-        .await
-        .map_err(|e| {
-            tracing::error!("Mailtrap API request failed: {}", e);
-            format!("Request failed: {}", e)
-        })?;
+    let response = if let Some(s) = state {
+        s.client.post("https://send.api.mailtrap.io/api/send")
+            .header("Authorization", format!("Bearer {}", api_token))
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .timeout(std::time::Duration::from_secs(15))
+            .send()
+            .await
+    } else {
+        Client::new().post("https://send.api.mailtrap.io/api/send")
+            .header("Authorization", format!("Bearer {}", api_token))
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .timeout(std::time::Duration::from_secs(15))
+            .send()
+            .await
+    }.map_err(|e| {
+        tracing::error!("Mailtrap API request failed: {}", e);
+        format!("Request failed: {}", e)
+    })?;
 
     if response.status().is_success() {
         tracing::info!("Mailtrap API: Email sent successfully to {}", to);
@@ -118,6 +127,29 @@ async fn send_via_smtp(to: &str, subject: &str, html_content: &str) -> Result<()
         Err(e) => {
             tracing::error!("SMTP: Failed to send email to {}: {}", to, e);
             Err(e.to_string())
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dotenvy::dotenv;
+
+    #[tokio::test]
+    async fn test_send_email() {
+        dotenv().ok();
+        let to = env::var("MAIL_TO_ADMIN_ADDRESS").unwrap_or_else(|_| "gugunguntur99@gmail.com".to_string());
+        let subject = "Test Email from Local";
+        let html_content = "<h1>Hello!</h1><p>This is a test email from local environment.</p>";
+        
+        println!("Testing email send to: {}", to);
+        match send_html_email(None, &to, subject, html_content).await {
+            Ok(_) => println!("✅ Email sent successfully to {}", to),
+            Err(e) => {
+                println!("❌ Failed to send email: {}", e);
+                // Don't panic yet, let's see the error
+            }
         }
     }
 }

@@ -170,7 +170,7 @@ pub async fn generate(
                     }
 
                     // Harvest from social media
-                    match harvester::harvest_social(&link).await {
+                    match harvester::harvest_social(&state.client, &link).await {
                         Ok(result) => {
                             let analysis = &result.analysis;
                             let metadata = &result.metadata;
@@ -262,7 +262,7 @@ pub async fn generate(
         effective_prompt
     };
 
-    match sumopod::generate_route(&final_prompt, &None).await {
+    match sumopod::generate_route(&state.client, &final_prompt, &None).await {
         Ok(route_data) => {
             let mock_id = Uuid::new_v4();
             let route_json = serde_json::to_value(&route_data).unwrap_or(serde_json::Value::Null);
@@ -286,9 +286,14 @@ pub async fn generate(
                 &route_json,
             ).await;
 
-            let mut headers = HeaderMap::new();
-            headers.insert("HX-Redirect", format!("/route/{}", mock_id).parse().unwrap());
-            (StatusCode::OK, headers, "Redirecting to map...".to_string()).into_response()
+            let mut response_headers = HeaderMap::new();
+            if headers.contains_key("HX-Request") {
+                response_headers.insert("HX-Redirect", format!("/route/{}", mock_id).parse().unwrap());
+            } else {
+                response_headers.insert(header::LOCATION, format!("/route/{}", mock_id).parse().unwrap());
+                return (StatusCode::SEE_OTHER, response_headers, "Redirecting to map...".to_string()).into_response();
+            }
+            (StatusCode::OK, response_headers, "Redirecting to map...".to_string()).into_response()
         }
         Err(e) => {
             tracing::error!("AI Generation Error: {}", e);
@@ -381,7 +386,7 @@ pub async fn harvest(
         );
     }
 
-    match harvester::harvest_social(url).await {
+    match harvester::harvest_social(&state.client, url).await {
         Ok(result) => {
             let ai_json = serde_json::to_value(&result.analysis).ok();
             let _ = db::upsert_gem(
@@ -484,7 +489,8 @@ pub async fn checkout(
     });
     let _ = db::create_topup(&state.db, u.id, payload.amount, &payload.tier, &invoice_number, Some(&payload_json)).await;
 
-    match mayar::create_invoice(&customer_name, &customer_email, payload.amount, &invoice_number).await {
+    let redirect_url = std::env::var("APP_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+    match mayar::create_invoice(&state.client, &customer_name, &customer_email, payload.amount, &invoice_number, &redirect_url).await {
         Ok(payment_url) => {
             let mut headers = HeaderMap::new();
             headers.insert("HX-Redirect", payment_url.parse().unwrap());
@@ -509,11 +515,28 @@ pub async fn payment_callback(
         if event == "payment.received" || event == "transaction_status_updated" {
             let data = payload_val.get("data").unwrap_or(&payload_val);
             let status = data.get("status").and_then(|s| s.as_str()).unwrap_or("");
-            let reference = data.get("reference").and_then(|s| s.as_str()).unwrap_or("");
             let payment_channel = data.get("payment_channel").and_then(|s| s.as_str());
+            
+            // Robust Reference Extraction
+            let mut reference = data.get("reference").and_then(|s| s.as_str()).unwrap_or("").to_string();
+            if reference.is_empty() {
+                if let Some(desc) = data.get("productDescription").and_then(|s| s.as_str()) {
+                    // Strip "Purchase " prefix if present
+                    if desc.starts_with("Purchase ") {
+                        reference = desc.replacen("Purchase ", "", 1).trim().to_string();
+                    } else {
+                        reference = desc.trim().to_string();
+                    }
+                }
+            }
 
             if status == "SUCCESS" || status == "PAID" {
-                tracing::info!("[WEBHOOK] Processing success for ref: {}", reference);
+                tracing::info!("[WEBHOOK] Processing success for ref: '{}'", reference);
+                
+                if reference.is_empty() {
+                    tracing::warn!("Webhook: SUCCESS/PAID received but reference is missing in payload");
+                    return StatusCode::BAD_REQUEST.into_response();
+                }
                 
                 let mut tx = match state.db.begin().await {
                     Ok(t) => t,
@@ -524,7 +547,7 @@ pub async fn payment_callback(
                 };
 
                 // 1. Fetch Topup
-                let topup = match db::find_topup_by_reference(&state.db, reference).await {
+                let topup = match db::find_topup_by_reference(&state.db, &reference).await {
                     Ok(Some(t)) => t,
                     Ok(None) => {
                         tracing::warn!("Webhook: Topup ref {} not found", reference);
@@ -678,7 +701,7 @@ pub async fn generate_caption_handler(
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(CaptionResponse { caption: None, error: Some(format!("Quota check failed: {}", e)) })),
     }
 
-    match sumopod::generate_caption(&payload.vibe, &payload.places).await {
+    match sumopod::generate_caption(&state.client, &payload.vibe, &payload.places).await {
         Ok(caption) => {
             (StatusCode::OK, Json(CaptionResponse { caption: Some(caption), error: None }))
         }

@@ -64,17 +64,13 @@ struct TikTokOEmbed {
 }
 
 /// Fetch metadata from TikTok using the official OEmbed API
-pub async fn fetch_tiktok_metadata(url: &str) -> Result<SocialMetadata, String> {
+pub async fn fetch_tiktok_metadata(client: &Client, url: &str) -> Result<SocialMetadata, String> {
     tracing::info!("HARVESTER: Fetching TikTok OEmbed metadata from {}", url);
-
-    let client = Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| format!("HTTP Client Error: {}", e))?;
 
     let oembed_url = format!("https://www.tiktok.com/oembed?url={}", urlencoding::encode(url));
 
     let response = client.get(&oembed_url)
+        .timeout(std::time::Duration::from_secs(15))
         .send()
         .await
         .map_err(|e| format!("OEmbed Fetch Error: {}", e))?;
@@ -105,16 +101,12 @@ pub async fn fetch_tiktok_metadata(url: &str) -> Result<SocialMetadata, String> 
 }
 
 /// Fetch metadata from Instagram using a simple scraper fallback
-pub async fn fetch_instagram_metadata(url: &str) -> Result<SocialMetadata, String> {
+pub async fn fetch_instagram_metadata(client: &Client, url: &str) -> Result<SocialMetadata, String> {
     tracing::info!("HARVESTER: Fetching Instagram metadata from {}", url);
 
-    let client = Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
-        .user_agent("facebookexternalhit/1.1")
-        .build()
-        .map_err(|e| format!("HTTP Client Error: {}", e))?;
-
     let response = client.get(url)
+        .header("User-Agent", "facebookexternalhit/1.1")
+        .timeout(std::time::Duration::from_secs(15))
         .send()
         .await
         .map_err(|e| format!("Instagram Fetch Error: {}", e))?;
@@ -173,7 +165,7 @@ pub async fn fetch_instagram_metadata(url: &str) -> Result<SocialMetadata, Strin
 }
 
 /// Analyze social content using Sumopod AI to determine if it's a hidden gem
-pub async fn analyze_content(metadata: &SocialMetadata) -> Result<HarvesterAnalysis, String> {
+pub async fn analyze_content(client: &Client, metadata: &SocialMetadata) -> Result<HarvesterAnalysis, String> {
     tracing::info!("HARVESTER: Analyzing content from {} ({})", metadata.url, metadata.platform);
 
     let api_key = std::env::var("SUMOPOD_API_KEY").map_err(|_| "Missing SUMOPOD_API_KEY".to_string())?;
@@ -218,7 +210,6 @@ RESPONS WAJIB DALAM JSON:
         metadata.author.as_deref().unwrap_or("Unknown")
     );
 
-    let client = reqwest::Client::new();
     let req_body = serde_json::json!({
         "model": model,
         "messages": [
@@ -232,6 +223,7 @@ RESPONS WAJIB DALAM JSON:
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&req_body)
+        .timeout(std::time::Duration::from_secs(30))
         .send()
         .await
         .map_err(|e| format!("AI request failed: {}", e))?;
@@ -258,46 +250,58 @@ RESPONS WAJIB DALAM JSON:
 }
 
 /// Full harvest pipeline: fetch metadata + analyze
-pub async fn harvest_social(url: &str) -> Result<HarvestResult, String> {
+pub async fn harvest_social(client: &Client, url: &str) -> Result<HarvestResult, String> {
     let mut metadata = if url.contains("tiktok.com") || url.contains("vm.tiktok.com") {
-        fetch_tiktok_metadata(url).await?
+        fetch_tiktok_metadata(client, url).await?
     } else if url.contains("instagram.com") || url.contains("ig.me") {
-        fetch_instagram_metadata(url).await?
+        fetch_instagram_metadata(client, url).await?
     } else {
         return Err("Platform tidak didukung. Gunakan link TikTok atau Instagram.".to_string());
     };
 
-    // Download and upload thumbnail to S3
-    if let Some(thumb_url) = &metadata.thumbnail {
-        tracing::info!("HARVESTER: Downloading thumbnail from {}", thumb_url);
-        let client = reqwest::Client::new();
-        if let Ok(resp) = client.get(thumb_url).send().await {
-            let content_type = resp.headers().get("content-type")
-                .and_then(|h| h.to_str().ok())
-                .unwrap_or("image/jpeg")
-                .to_string();
-            
-            if let Ok(bytes) = resp.bytes().await {
-                let bytes_vec = bytes.to_vec();
-                let file_ext = if content_type.contains("png") { "png" } else { "jpg" };
-                let filename = format!("harvester/thumb_{}_{}.{}", metadata.platform, uuid::Uuid::new_v4(), file_ext);
+    // Parallelize AI analysis and thumbnail processing
+    let metadata_clone = metadata.clone();
+    let client_clone = client.clone();
+    
+    let analysis_future = analyze_content(client, &metadata);
+    
+    // Thumbnail job (optional, can fail silently or log)
+    let thumbnail_future = async move {
+        if let Some(thumb_url) = &metadata_clone.thumbnail {
+            tracing::info!("HARVESTER: Downloading thumbnail from {}", thumb_url);
+            if let Ok(resp) = client_clone.get(thumb_url).timeout(std::time::Duration::from_secs(10)).send().await {
+                let content_type = resp.headers().get("content-type")
+                    .and_then(|h| h.to_str().ok())
+                    .unwrap_or("image/jpeg")
+                    .to_string();
                 
-                match crate::storage::upload_to_spaces(&filename, bytes_vec, &content_type).await {
-                    Ok(s3_path) => {
-                        let cdn_url = format!("https://ekaputratour.sgp1.digitaloceanspaces.com/{}", s3_path);
-                        tracing::info!("HARVESTER: Uploaded thumbnail to S3: {}", cdn_url);
-                        metadata.thumbnail = Some(cdn_url);
-                    }
-                    Err(e) => {
-                        tracing::error!("HARVESTER: Failed to upload thumbnail to S3: {}", e);
+                if let Ok(bytes) = resp.bytes().await {
+                    let bytes_vec = bytes.to_vec();
+                    let file_ext = if content_type.contains("png") { "png" } else { "jpg" };
+                    let filename = format!("harvester/thumb_{}_{}.{}", metadata_clone.platform, uuid::Uuid::new_v4(), file_ext);
+                    
+                    match crate::storage::upload_to_spaces(&filename, bytes_vec, &content_type).await {
+                        Ok(s3_path) => {
+                            let cdn_url = format!("https://ekaputratour.sgp1.digitaloceanspaces.com/{}", s3_path);
+                            tracing::info!("HARVESTER: Uploaded thumbnail to S3: {}", cdn_url);
+                            return Some(cdn_url);
+                        }
+                        Err(e) => {
+                            tracing::error!("HARVESTER: Failed to upload thumbnail to S3: {}", e);
+                        }
                     }
                 }
             }
         }
-    }
+        None
+    };
 
-    let analysis = analyze_content(&metadata).await?;
+    let (analysis_res, thumbnail_res) = tokio::join!(analysis_future, thumbnail_future);
+    
+    let analysis = analysis_res?;
+    if let Some(new_thumb) = thumbnail_res {
+        metadata.thumbnail = Some(new_thumb);
+    }
 
     Ok(HarvestResult { metadata, analysis })
 }
-

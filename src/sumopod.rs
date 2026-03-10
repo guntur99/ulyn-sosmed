@@ -74,12 +74,10 @@ pub struct RouteCandidate {
     pub video_url: Option<String>,
 }
 
-pub async fn generate_route(prompt: &str, links: &Option<String>) -> Result<RouteData, String> {
+pub async fn generate_route(client: &Client, prompt: &str, links: &Option<String>) -> Result<RouteData, String> {
     let api_key = std::env::var("SUMOPOD_API_KEY").map_err(|_| "Missing SUMOPOD_API_KEY")?;
     let base_url = std::env::var("SUMOPOD_BASE_URL").map_err(|_| "Missing SUMOPOD_BASE_URL")?;
     let model = std::env::var("SUMOPOD_MODEL_SANTUY").unwrap_or_else(|_| "gemini/gemini-2.5-flash-lite".to_string());
-
-    let client = Client::new();
 
     let system_prompt = "You are an AI travel assistant. Generate a local itinerary or route based on the user's prompt. 
 Respond ONLY in valid JSON format matching this exact structure:
@@ -105,6 +103,8 @@ Respond ONLY in valid JSON format matching this exact structure:
         {
           \"name\": \"Another place\",
           \"address\": \"Nearby address\",
+          \"latitude\": -6.89,
+          \"longitude\": 107.61,
           \"rating\": 4.5,
           \"price_range\": \"Rp 20k - 40k\",
           \"thumbnail_url\": null,
@@ -125,7 +125,6 @@ Provide 2-3 candidates (alternative locations) for each main step. Provide aroun
             ChatMessage { role: "system".to_string(), content: system_prompt.to_string() },
             ChatMessage { role: "user".to_string(), content: user_content },
         ],
-        // Note: Sumopod (Gemini compatible) might not strictly need JSON object format enforcing, but this is OpenAI standard
         response_format: Some(ResponseFormat { format_type: "json_object".to_string() }),
     };
 
@@ -133,6 +132,7 @@ Provide 2-3 candidates (alternative locations) for each main step. Provide aroun
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&req_body)
+        .timeout(std::time::Duration::from_secs(45))
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
@@ -145,7 +145,6 @@ Provide 2-3 candidates (alternative locations) for each main step. Provide aroun
     let resp_json: ChatResponse = response.json().await.map_err(|e| format!("Failed to parse API response JSON: {}", e))?;
     let content = resp_json.choices.first().map(|c| c.message.content.clone()).unwrap_or_default();
 
-    // Sometimes AI returns markdown wrapped JSON
     let cleaned_content = content.trim().strip_prefix("```json").unwrap_or(&content).strip_suffix("```").unwrap_or(&content).trim();
 
     let route_data: RouteData = serde_json::from_str(cleaned_content).map_err(|e| format!("Failed to parse route data JSON: {} | Content: {}", e, cleaned_content))?;
@@ -153,12 +152,10 @@ Provide 2-3 candidates (alternative locations) for each main step. Provide aroun
     Ok(route_data)
 }
 
-pub async fn generate_caption(vibe: &str, places: &[String]) -> Result<String, String> {
+pub async fn generate_caption(client: &Client, vibe: &str, places: &[String]) -> Result<String, String> {
     let api_key = std::env::var("SUMOPOD_API_KEY").map_err(|_| "Missing SUMOPOD_API_KEY")?;
     let base_url = std::env::var("SUMOPOD_BASE_URL").map_err(|_| "Missing SUMOPOD_BASE_URL")?;
     let model = std::env::var("SUMOPOD_MODEL_SANTUY").unwrap_or_else(|_| "gemini/gemini-2.5-flash-lite".to_string());
-
-    let client = Client::new();
 
     let places_str = places.join(", ");
     let system_prompt = format!(
@@ -181,6 +178,7 @@ pub async fn generate_caption(vibe: &str, places: &[String]) -> Result<String, S
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&req_body)
+        .timeout(std::time::Duration::from_secs(30))
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;

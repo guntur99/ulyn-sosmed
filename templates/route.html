@@ -4,7 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ulyn AI - Smart Trip Planner</title>
+    <title>{{ route.title }} - Ulyn AI Trip</title>
+    <meta name="description"
+        content="Check out this travel itinerary created with Ulyn AI: {{ route.title }}. Plan your next adventure with AI powered by social media insights.">
+
+    <!-- Favicon & Branding -->
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/favicon.png">
+    <meta name="theme-color" content="#6366f1">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800;900&display=swap"
         rel="stylesheet">
@@ -175,9 +182,22 @@
             z-index: 20;
         }
 
-        /* Leaflet custom styling */
-        .leaflet-container {
-            font-family: inherit;
+        /* Animated Polyline */
+        @keyframes dash-move {
+            to {
+                stroke-dashoffset: -20;
+            }
+        }
+
+        .leaflet-interactive.animated-path {
+            stroke-dasharray: 10, 10;
+            animation: dash-move 1s linear infinite;
+            filter: drop-shadow(0 0 4px rgba(244, 63, 94, 0.4));
+        }
+
+        .leaflet-interactive.path-glow {
+            filter: blur(4px) opacity(0.5);
+            stroke-width: 12px !important;
         }
     </style>
 </head>
@@ -1168,7 +1188,7 @@
             // Build & submit form
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '/generate';
+            form.action = '/api/generate';
 
             const addField = (name, val) => {
                 const input = document.createElement('input');
@@ -1420,7 +1440,10 @@
         function drawInitialMarkers() {
             if (!map) return;
 
-            // Clear existing if any (unlikely for initial markers but safe)
+            // OSRM is used for routing to save Google Maps API hits.
+            // Only markers and polylines are rendered via Google/Leaflet.
+
+            // Clear existing markers
             if (usingGoogle) {
                 initialMarkers.forEach(m => m.setMap(null));
                 initialMarkers = [];
@@ -1483,7 +1506,7 @@
             if (typeof userMarker !== 'undefined' && userMarker) {
                 try {
                     const userPos = usingGoogle ? userMarker.getPosition() : userMarker.getLatLng();
-                    rawPoints.push([usingGoogle ? userPos.lat() : userPos.lat, usingGoogle ? userPos.lng() : userPos.lng]);
+                    rawPoints.push([usingGoogle ? (typeof userPos.lat === 'function' ? userPos.lat() : userPos.lat) : userPos.lat, usingGoogle ? (typeof userPos.lng === 'function' ? userPos.lng() : userPos.lng) : userPos.lng]);
                 } catch (e) {
                     console.warn("Could not get user position for route drawing:", e);
                 }
@@ -1505,31 +1528,33 @@
             }
 
             if (points.length > 1) {
-                // FALLBACK POLYLINE: Draw immediately so the map isn't empty
+                // FALLBACK POLYLINE: Draw immediately so the map isn't empty (Solid Thin)
                 if (usingGoogle) {
                     const fallback = new google.maps.Polyline({
                         path: points.map(p => ({ lat: p[0], lng: p[1] })),
                         geodesic: true,
                         strokeColor: '#f43f5e',
-                        strokeOpacity: 0.4,
-                        strokeWeight: 4,
+                        strokeOpacity: 0.3,
+                        strokeWeight: 3,
                         map: googleMap,
-                        zIndex: 0,
-                        icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 2 }, offset: '0', repeat: '10px' }]
+                        zIndex: 0
                     });
                     routeLayers.push(fallback);
                 } else {
-                    L.polyline(points, { color: '#f43f5e', weight: 4, opacity: 0.4, dashArray: '5, 10' }).addTo(routeLayers);
+                    L.polyline(points, { color: '#f43f5e', weight: 3, opacity: 0.3 }).addTo(routeLayers);
                 }
 
                 var osrmCoords = points.map(ll => ll[1] + ',' + ll[0]).join(';');
                 var profile = currentTravelMode === 'walking' ? 'walking' : 'driving';
                 var osrmUrl = `https://router.project-osrm.org/route/v1/${profile}/` + osrmCoords + '?overview=full&geometries=geojson';
 
+                console.log("OSRM Request:", { profile, points: points.length, url: osrmUrl });
+
                 fetch(osrmUrl)
                     .then(response => response.json())
                     .then(data => {
                         if (currentFetchId !== lastRouteFetchId) return; // Stale fetch
+                        console.log("OSRM Response:", { status: data.code, routes: (data.routes || []).length });
 
                         if (data.routes && data.routes.length > 0) {
                             if (usingGoogle) {
@@ -1537,6 +1562,18 @@
                                 routeLayers = [];
                                 const routeCoords = data.routes[0].geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
 
+                                // Background Glow Layer
+                                const glowLine = new google.maps.Polyline({
+                                    path: routeCoords,
+                                    strokeColor: '#be123c',
+                                    strokeOpacity: 0.15,
+                                    strokeWeight: 14,
+                                    map: googleMap,
+                                    zIndex: 1
+                                });
+                                routeLayers.push(glowLine);
+
+                                // Main Visible Layer
                                 const mainLine = new google.maps.Polyline({
                                     path: routeCoords,
                                     strokeColor: '#f43f5e',
@@ -1550,19 +1587,23 @@
                                 if (routeCoords.length > 0) {
                                     const bounds = new google.maps.LatLngBounds();
                                     routeCoords.forEach(c => bounds.extend(c));
-                                    googleMap.fitBounds(bounds, {
-                                        top: 100, right: 100, bottom: 100, left: 100
-                                    });
+                                    googleMap.fitBounds(bounds, { top: 100, right: 100, bottom: 100, left: 100 });
                                 }
                             } else {
                                 routeLayers.clearLayers();
                                 const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                                L.polyline(routeCoords, { color: '#be123c', weight: 12, opacity: 0.2 }).addTo(routeLayers);
-                                const mainPoly = L.polyline(routeCoords, { color: '#f43f5e', weight: 6, opacity: 1.0 }).addTo(routeLayers);
+
+                                // Glowing background layer
+                                L.polyline(routeCoords, { className: 'path-glow', color: '#be123c', weight: 12, opacity: 0.2 }).addTo(routeLayers);
+                                // Main animated layer
+                                const mainPoly = L.polyline(routeCoords, { className: 'animated-path', color: '#f43f5e', weight: 6, opacity: 1.0 }).addTo(routeLayers);
+
                                 if (routeCoords.length > 0) {
                                     map.fitBounds(mainPoly.getBounds(), { padding: [80, 80] });
                                 }
                             }
+                        } else {
+                            console.warn("OSRM returned no routes. Staying with fallback line.");
                         }
                     })
                     .catch(e => {

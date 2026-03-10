@@ -24,6 +24,7 @@ pub struct AppState {
     pub routes: Arc<RwLock<HashMap<String, sumopod::RouteData>>>,
     pub db: sqlx::PgPool,
     pub redis: redis::Client,
+    pub client: reqwest::Client,
 }
 
 #[tokio::main]
@@ -111,6 +112,11 @@ async fn main() {
         routes: Arc::new(RwLock::new(HashMap::new())),
         db: pool,
         redis: redis_client,
+        client: reqwest::Client::builder()
+            .timeout(Duration::from_secs(60))
+            .pool_idle_timeout(Duration::from_secs(90))
+            .build()
+            .expect("Failed to create reqwest client"),
     };
 
     // build our application with a route

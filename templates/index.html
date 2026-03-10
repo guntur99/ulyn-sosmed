@@ -4,7 +4,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ulyn AI - Smart Trip Planner</title>
+
+    <!-- SEO Meta Tags -->
+    <title>Ulyn AI - Smart Trip Planner & Social Media Itinerary Generator</title>
+    <meta name="description"
+        content="Ulyn AI is the ultimate smart trip planner that transforms your saved Instagram and TikTok videos into real-world travel routes. Discover hidden gems and plan your perfect trip in seconds.">
+    <meta name="keywords"
+        content="travel ai, trip planner, social media travel, instagram itinerary, tiktok hidden gems, route generator, travel indonesia">
+    <meta name="author" content="Ulyn AI Team">
+    <link rel="canonical" href="https://ulyn.ai/">
+
+    <!-- Favicon & Branding -->
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/favicon.png">
+    <meta name="theme-color" content="#e11d48">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ulyn.ai/">
+    <meta property="og:title" content="Ulyn AI - Smart Trip Planner & Social Media Itinerary Generator">
+    <meta property="og:description"
+        content="Turn your social media saves into a real travel itinerary. Discover hidden gems and plan your route with AI.">
+    <meta property="og:image" content="/static/favicon.png">
+
+    <!-- Twitter Card -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ulyn.ai/">
+    <meta property="twitter:title" content="Ulyn AI - Smart Trip Planner & Social Media Itinerary Generator">
+    <meta property="twitter:description"
+        content="Turn your social media saves into a real travel itinerary. Discover hidden gems and plan your route with AI.">
+    <meta property="twitter:image" content="/static/favicon.png">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Ulyn AI",
+      "applicationCategory": "TravelApplication",
+      "operatingSystem": "Web",
+      "description": "Smart trip planner that transforms social media links into travel routes.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
@@ -679,20 +725,6 @@
             </div>
 
             <div class="p-8 overflow-y-auto custom-scrollbar" id="socialLinksList">
-                <div class="mt-12 flex flex-col items-center gap-4 animate-fade-in-up" style="animation-delay: 0.6s">
-                    <button onclick="document.getElementById('socialLinksModal').classList.remove('hidden')"
-                        class="group relative inline-flex items-center justify-center px-10 py-5 font-black text-white transition-all duration-300 ease-in-out bg-rose-600 rounded-[2rem] hover:bg-rose-500 hover:shadow-[0_0_30px_rgba(225,29,72,0.4)] active:scale-95">
-                        <span class="relative flex items-center gap-3">
-                            <i class="fas fa-magic text-xl animate-pulse"></i>
-                            <span class="text-lg tracking-tight" data-i18n="ctaBtn">Buat Rute AI</span>
-                        </span>
-                    </button>
-                    <p
-                        class="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 dark:text-slate-500 flex items-center gap-2">
-                        <i class="fas fa-gift text-rose-500"></i>
-                        <span>Dapatkan 7 Kuota Gratis Saat Daftar</span>
-                    </p>
-                </div>
                 <div class="space-y-4" id="linkInputsWrapper">
                     <div class="link-input-item group relative">
                         <div
@@ -896,12 +928,14 @@
             </div>
 
             <!-- Registration Gift / Quota Info -->
+            {% if user.is_none() %}
             <div class="mt-8 flex flex-col items-center gap-2 animate-fade-in-up" style="animation-delay: 0.8s">
                 <p class="text-[10px] uppercase tracking-[0.2em] font-black text-rose-500/80 flex items-center gap-2">
                     <i class="fas fa-gift animate-bounce"></i>
                     <span>Dapatkan 7 Kredit Gratis Saat Pertama Daftar</span>
                 </p>
             </div>
+            {% endif %}
 
             <!-- Action Buttons Footer -->
             <div class="flex flex-col sm:flex-row gap-3 mt-4">
