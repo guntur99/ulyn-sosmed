@@ -1780,29 +1780,68 @@
         };
 
         // Processing Modal Logic
-        const processingPhases = [
-            "MENGUMPULKAN DATA LOKASI...",
-            "MENGIDENTIFIKASI HIDDEN GEMS...",
-            "MENGHITUNG JARAK ANTAR TITIK...",
-            "MERACIK ITINERARY TERBAIK...",
-            "MENYIAPKAN PREDIKSI CUACA...",
-            "FINISHING PETUALANGANMU..."
-        ];
-
-        const processingTitles = [
-            "Cari hidden gems...",
-            "Lagi racik rute...",
-            "Sedikit lagi siap...",
-            "Hampir selesai..."
-        ];
+        const PROCESSING_TRANSLATIONS = {
+            id: {
+                phases: ["MENGUMPULKAN DATA LOKASI...", "MENGIDENTIFIKASI HIDDEN GEMS...", "MENGHITUNG JARAK ANTAR TITIK...", "MERACIK ITINERARY TERBAIK...", "MENYIAPKAN PREDIKSI CUACA...", "FINISHING PETUALANGANMU..."],
+                titles: ["Cari hidden gems...", "Lagi racik rute...", "Sedikit lagi siap...", "Hampir selesai..."],
+                sub: "ULYN AI SEDANG MERACIK PETUALANGANMU"
+            },
+            en: {
+                phases: ["COLLECTING LOCATION DATA...", "IDENTIFYING HIDDEN GEMS...", "CALCULATING DISTANCES...", "CRAFTING BEST ITINERARY...", "PREPARING WEATHER FORECAST...", "FINISHING YOUR ADVENTURE..."],
+                titles: ["Seeking hidden gems...", "Mixing your route...", "Almost ready...", "Nearly finished..."],
+                sub: "ULYN AI IS CRAFTING YOUR ADVENTURE"
+            },
+            ja: {
+                phases: ["位置データを収集中...", "穴場スポットを特定中...", "地点間の距離を計算中...", "最高の旅程を作成中...", "天気予報を準備中...", "あなたの冒険を仕上げています..."],
+                titles: ["穴場スポットを探しています...", "ルートを調合中...", "まもなく準備完了...", "もうすぐ終わります..."],
+                sub: "ULYN AI があなたの冒険を調合しています"
+            },
+            ko: {
+                phases: ["위치 데이터를 수집 중...", "숨은 명소를 확인 중...", "지점 간 거리를 계산 중...", "최적의 일정을 짜는 중...", "일기 예보를 준비 중...", "당신의 모험을 마무리하고 있습니다..."],
+                titles: ["숨은 명소를 찾는 중...", "경로를 제작 중...", "거의 준비됨...", "곧 완료됩니다..."],
+                sub: "ULYN AI가 당신의 모험을 제작하고 있습니다"
+            },
+            zh: {
+                phases: ["正在收集位置数据...", "正在识别隐藏宝藏...", "正在计算点间距离...", "正在制定最佳行程...", "正在准备天气预报...", "为您完成探险准备..."],
+                titles: ["寻找隐藏宝藏...", "正在规划路线...", "即将准备就绪...", "快要完成了..."],
+                sub: "ULYN AI 正在为您规划探险之旅"
+            },
+            nl: {
+                phases: ["LOCATIEGEGEVENS VERZAMELEN...", "VERBORGEN PARELTJES IDENTIFICEREN...", "AFSTANDEN BEREKENEN...", "BESTE REISSCHEMA SAMENSTELLEN...", "WEERSVOORSPELLING VOORBEREIDEN...", "JE AVONTUUR AFRONDEN..."],
+                titles: ["Verborgen juweeltjes zoeken...", "Route aan het mixen...", "Bijna klaar...", "Bijna klaar..."],
+                sub: "ULYN AI MIXT JE AVONTUUR"
+            },
+            af: {
+                phases: ["LIGGINGDATA WORD INGESAMEL...", "VERSTEEKTE JUWELE WORD GEÏDENTIFISEER...", "AFSTANDE WORD BEREKEN...", "BESTE REISPLAN WORD SAAMGESTEL...", "WEERVOORSPELLING WORD VOORBEREI...", "AVONTUUR WORD AFGEROND..."],
+                titles: ["Soek versteekte juwele...", "Roete word saamgestel...", "Byna gereed...", "Byna klaar..."],
+                sub: "ULYN AI IS BESIG OM JOU AVONTUUR SAAM TE STEL"
+            },
+            ar: {
+                phases: ["جاري جمع بيانات الموقع...", "جاري تحديد الجواهر الخفية...", "جاري حساب المسافات...", "جاري تجهيز أفضل برنامج رحلة...", "جاري إعداد توقعات الطقس...", "جاري اللمسات النهائية لمغامرتك..."],
+                titles: ["البحث عن الجواهر الخفية...", "جاري إعداد المسار...", "على وشك الاستعداد...", "قربنا نخلص..."],
+                sub: "ULYN AI يقوم بإعداد مغامرتك الآن"
+            },
+            ru: {
+                phases: ["СБОР ДАННЫХ О ЛОКАЦИЯХ...", "ПОИСК СКРЫТЫХ ЖЕМЧУЖИН...", "РАСЧЕТ РАССТОЯНИЙ...", "СОЗДАНИЕ ЛУЧШЕГО МАРШРУТА...", "ПОДГОТОВКА ПРОГНОЗА ПОГОДЫ...", "ЗАВЕРШАЕМ ВАШЕ ПРИКЛЮЧЕНИЕ..."],
+                titles: ["Ищем скрытые жемчужины...", "Составляем маршрут...", "Почти готово...", "Завершаем..."],
+                sub: "ULYN AI ГОТОВИТ ВАШЕ ПРИКЛЮЧЕНИЕ"
+            }
+        };
 
         function showProcessingModal() {
+            const lang = localStorage.getItem('language') || 'id';
+            const t = PROCESSING_TRANSLATIONS[lang] || PROCESSING_TRANSLATIONS.id;
+
             const modal = document.getElementById('processingModal');
             const bar = document.getElementById('processingBar');
             const phaseTxt = document.getElementById('loadingPhase');
             const titleTxt = document.getElementById('processingTitle');
+            const subTxt = document.getElementById('processingSub');
 
             if (!modal) return;
+
+            // Set subtext
+            if (subTxt) subTxt.innerText = t.sub;
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -1811,9 +1850,12 @@
             let phaseIdx = 0;
             let titleIdx = 0;
 
+            const phases = t.phases;
+            const titles = t.titles;
+
             // Initial flash
-            phaseTxt.innerText = processingPhases[0];
-            titleTxt.innerText = processingTitles[0];
+            if (phaseTxt) phaseTxt.innerText = phases[0];
+            if (titleTxt) titleTxt.innerText = titles[0];
 
             const interval = setInterval(() => {
                 progress += Math.random() * 8;
@@ -1821,24 +1863,24 @@
                 if (bar) bar.style.width = `${progress}%`;
 
                 // Update phases
-                if (progress > (phaseIdx + 1) * (100 / processingPhases.length) && phaseIdx < processingPhases.length - 1) {
+                if (progress > (phaseIdx + 1) * (100 / phases.length) && phaseIdx < phases.length - 1) {
                     phaseIdx++;
                     if (phaseTxt) {
                         phaseTxt.style.opacity = 0;
                         setTimeout(() => {
-                            phaseTxt.innerText = processingPhases[phaseIdx];
+                            phaseTxt.innerText = phases[phaseIdx];
                             phaseTxt.style.opacity = 1;
                         }, 300);
                     }
                 }
 
                 // Update titles
-                if (progress > (titleIdx + 1) * (100 / processingTitles.length) && titleIdx < processingTitles.length - 1) {
+                if (progress > (titleIdx + 1) * (100 / titles.length) && titleIdx < titles.length - 1) {
                     titleIdx++;
                     if (titleTxt) {
                         titleTxt.style.opacity = 0;
                         setTimeout(() => {
-                            titleTxt.innerText = processingTitles[titleIdx];
+                            titleTxt.innerText = titles[titleIdx];
                             titleTxt.style.opacity = 1;
                         }, 300);
                     }
