@@ -74,18 +74,19 @@ pub struct RouteCandidate {
     pub video_url: Option<String>,
 }
 
-pub async fn generate_route(client: &Client, prompt: &str, links: &Option<String>) -> Result<RouteData, String> {
+pub async fn generate_route(client: &Client, prompt: &str, lang: &str, links: &Option<String>) -> Result<RouteData, String> {
     let api_key = std::env::var("SUMOPOD_API_KEY").map_err(|_| "Missing SUMOPOD_API_KEY")?;
     let base_url = std::env::var("SUMOPOD_BASE_URL").map_err(|_| "Missing SUMOPOD_BASE_URL")?;
     let model = std::env::var("SUMOPOD_MODEL_SANTUY").unwrap_or_else(|_| "gemini/gemini-2.5-flash-lite".to_string());
 
-    let system_prompt = "You are an AI travel assistant. Generate a local itinerary or route based on the user's prompt. 
+    let system_prompt = format!("You are an AI travel assistant. Generate a local itinerary or route based on the user's prompt. 
+Respond in the language specified: {}.
 Respond ONLY in valid JSON format matching this exact structure:
-{
+{{
   \"title\": \"Catchy title for the route\",
   \"weather\": \"24°C, Cerah Berawan\",
   \"steps\": [
-    {
+    {{
       \"location_name\": \"Name of place\",
       \"address\": \"Full street address\",
       \"category\": \"COFFEE SHOP\",
@@ -100,7 +101,7 @@ Respond ONLY in valid JSON format matching this exact structure:
       \"thumbnail_url\": null,
       \"video_url\": null,
       \"candidates\": [
-        {
+        {{
           \"name\": \"Another place\",
           \"address\": \"Nearby address\",
           \"latitude\": -6.89,
@@ -109,13 +110,13 @@ Respond ONLY in valid JSON format matching this exact structure:
           \"price_range\": \"Rp 20k - 40k\",
           \"thumbnail_url\": null,
           \"video_url\": null
-        }
+        }}
       ]
-    }
+    }}
   ]
-}
+}}
 If the user provides social links or harvested data, include the exact `source_platform`, `thumbnail_url`, and `video_url` in the specific route step if matching. 
-Provide 2-3 candidates (alternative locations) for each main step. Provide around 3-5 major steps.";
+Provide 2-3 candidates (alternative locations) for each main step. Provide around 3-5 major steps.", lang);
 
     let user_content = format!("Prompt: {}\nLinks: {}", prompt, links.as_deref().unwrap_or(""));
 
@@ -152,17 +153,17 @@ Provide 2-3 candidates (alternative locations) for each main step. Provide aroun
     Ok(route_data)
 }
 
-pub async fn generate_caption(client: &Client, vibe: &str, places: &[String]) -> Result<String, String> {
+pub async fn generate_caption(client: &Client, vibe: &str, places: &[String], lang: &str) -> Result<String, String> {
     let api_key = std::env::var("SUMOPOD_API_KEY").map_err(|_| "Missing SUMOPOD_API_KEY")?;
     let base_url = std::env::var("SUMOPOD_BASE_URL").map_err(|_| "Missing SUMOPOD_BASE_URL")?;
     let model = std::env::var("SUMOPOD_MODEL_SANTUY").unwrap_or_else(|_| "gemini/gemini-2.5-flash-lite".to_string());
 
     let places_str = places.join(", ");
     let system_prompt = format!(
-        "You are an expert social media travel influencer. Generate a viral travel caption in Indonesian for a trip to: {}. 
+        "You are an expert social media travel influencer. Generate a viral travel caption in the language: {} for a trip to: {}. 
         The vibe should be: {}.
         Keep it engaging, use relevant emojis, and include 3-5 trending hashtags. Respond ONLY with the caption text.",
-        places_str, vibe
+        lang, places_str, vibe
     );
 
     let req_body = ChatRequest {

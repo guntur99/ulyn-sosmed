@@ -274,6 +274,31 @@
                 "{{ route.title }}"</h1>
         </div>
 
+        <!-- Guest Registration Banner -->
+        {% if user.is_none() %}
+        <div id="regGiftBanner"
+            class="mx-8 mb-4 p-4 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/20 relative overflow-hidden group">
+            <div
+                class="absolute top-[-20px] right-[-20px] w-20 h-20 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700">
+            </div>
+            <div class="relative flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl">
+                    🎁
+                </div>
+                <div>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-rose-100 mb-0.5"
+                        data-i18n="regGiftLabel">SPECIAL GIFT</p>
+                    <p class="text-xs font-bold leading-tight" data-i18n="regGift">Dapatkan 7 Kredit Gratis Saat Pertama
+                        Daftar</p>
+                </div>
+                <a href="/login"
+                    class="ml-auto w-8 h-8 rounded-full bg-white text-rose-500 flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all">
+                    <i class="fas fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Itinerary Steps -->
         <div class="sidebar-scroll px-8 pb-32 no-scrollbar">
 
@@ -685,10 +710,11 @@
                             <i class="fas fa-wallet text-xl"></i>
                         </div>
                         <div>
-                            <p
-                                class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-0.5">
+                            <p class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-0.5"
+                                data-i18n="estBiayaLabel">
                                 ESTIMASI BIAYA</p>
-                            <p class="text-[10px] text-emerald-600/70 dark:text-emerald-400/60 font-medium">Per orang
+                            <p class="text-[10px] text-emerald-600/70 dark:text-emerald-400/60 font-medium"
+                                data-i18n="estBiayaDesc">Per orang
                                 (Tiket + Makan)</p>
                         </div>
                     </div>
@@ -700,7 +726,8 @@
 
                 <a href="#" id="modal-btn-go" target="_blank"
                     class="w-full flex items-center justify-center bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-black py-5 rounded-[24px] transition-all duration-300 shadow-2xl shadow-slate-300 dark:shadow-rose-900/20 text-sm uppercase tracking-widest transform active:scale-95 group">
-                    BUKA GOOGLE MAPS <i class="fas fa-external-link-alt ml-2 text-xs opacity-70"></i>
+                    <span data-i18n="openMapsBtn">BUKA GOOGLE MAPS</span> <i
+                        class="fas fa-external-link-alt ml-2 text-xs opacity-70"></i>
                 </a>
 
                 <button onclick="closePreviewModal()"
@@ -867,56 +894,56 @@
                             </div>
                         </div>
 
-                        <div class="border-t-2 border-b-2 border-rose-400">
-                            <div
-                                class="flex text-[10px] font-black text-rose-500 uppercase py-2 border-b border-rose-200">
-                                <div class="w-8 text-center border-r border-rose-200 pt-0.5">QTY</div>
-                                <div class="flex-1 px-3 border-r border-rose-200 pt-0.5">DESTINATION / ACTIVITY
-                                </div>
-                                <div class="w-14 text-center pt-0.5" data-i18n="receiptCost">COST</div>
+                        <div class="flex text-[10px] font-black text-rose-500 uppercase py-2 border-b border-rose-200">
+                            <div class="w-8 text-center border-r border-rose-200 pt-0.5" data-i18n="receiptQty">QTY
                             </div>
-                            <div class="relative min-h-[200px]">
-                                <div id="receipt-items-original" class="relative z-10">
-                                    <!-- Items will be injected here -->
-                                </div>
+                            <div class="flex-1 px-3 border-r border-rose-200 pt-0.5" data-i18n="receiptDest">DESTINATION
+                                / ACTIVITY
                             </div>
+                            <div class="w-14 text-center pt-0.5" data-i18n="receiptCost">COST</div>
                         </div>
-
-                        <div class="mt-4 flex justify-between items-end">
-                            <div>
-                                <p class="italic text-3xl text-rose-500 font-serif">Thank You!</p>
-                                <p class="text-[8px] uppercase tracking-widest text-rose-300 ml-2">ULYN TEAM</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="flex items-center justify-end gap-2 mb-1">
-                                    <span
-                                        class="text-[8px] font-black text-slate-400 uppercase tracking-widest">LAYANAN</span>
-                                    <span
-                                        class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full uppercase"
-                                        id="receipt-mode-val">DRIVING</span>
-                                </div>
-                                <div class="flex items-baseline justify-end gap-2">
-                                    <span
-                                        class="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL:</span>
-                                    <span class="text-2xl font-black text-slate-900 leading-none">Rp 20k</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 pt-4 border-t border-dashed border-rose-200 flex justify-center">
-                            <div
-                                class="w-24 h-24 bg-slate-100 flex items-center justify-center border border-slate-200 p-1">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://ulyn.fun"
-                                    class="w-full h-full grayscale contrast-125 opacity-70">
+                        <div class="relative min-h-[200px]">
+                            <div id="receipt-items-original" class="relative z-10">
+                                <!-- Items will be injected here -->
                             </div>
                         </div>
                     </div>
-                    <div class="absolute -bottom-3 left-0 w-full h-3"
-                        style="background-image: linear-gradient(135deg, #fffef8 50%, transparent 50%), linear-gradient(-135deg, #fffef8 50%, transparent 50%); background-size: 16px 16px; background-repeat: repeat-x;">
+
+                    <div class="mt-4 flex justify-between items-end">
+                        <div>
+                            <p class="italic text-3xl text-rose-500 font-serif" data-i18n="receiptThanks">Thank You!</p>
+                            <p class="text-[8px] uppercase tracking-widest text-rose-300 ml-2">ULYN TEAM</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="flex items-center justify-end gap-2 mb-1">
+                                <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest"
+                                    data-i18n="receiptService">LAYANAN</span>
+                                <span
+                                    class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full uppercase"
+                                    id="receipt-mode-val">DRIVING</span>
+                            </div>
+                            <div class="flex items-baseline justify-end gap-2">
+                                <span
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL:</span>
+                                <span class="text-2xl font-black text-slate-900 leading-none">Rp 20k</span>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="mt-6 pt-4 border-t border-dashed border-rose-200 flex justify-center">
+                        <div
+                            class="w-24 h-24 bg-slate-100 flex items-center justify-center border border-slate-200 p-1">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://ulyn.fun"
+                                class="w-full h-full grayscale contrast-125 opacity-70">
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute -bottom-3 left-0 w-full h-3"
+                    style="background-image: linear-gradient(135deg, #fffef8 50%, transparent 50%), linear-gradient(-135deg, #fffef8 50%, transparent 50%); background-size: 16px 16px; background-repeat: repeat-x;">
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <script>
@@ -1329,7 +1356,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         vibe: currentVibe,
-                        places: destinations
+                        places: destinations,
+                        lang: localStorage.getItem('language') || 'id'
                     })
                 });
 
@@ -1820,6 +1848,8 @@
         // Language Logic
         const routeTranslations = {
             id: {
+                regGiftLabel: 'HADIAH SPESIAL',
+                regGift: 'Dapatkan 7 Kredit Gratis Saat Pertama Daftar',
                 routeBack: 'Kembali',
                 routeTranslateLabel: 'ITINERARY PILIHAN',
                 routeStartLoc: 'Titik Keberangkatan',
@@ -1845,9 +1875,18 @@
                 receiptItinerary: 'Itinerary Slip',
                 receiptDate: 'Date',
                 receiptRef: 'Ref No',
-                receiptCost: 'COST'
+                receiptCost: 'COST',
+                receiptQty: 'QTY',
+                receiptDest: 'DESTINATION / ACTIVITY',
+                receiptThanks: 'Thank You!',
+                receiptService: 'LAYANAN',
+                estBiayaLabel: 'ESTIMASI BIAYA',
+                estBiayaDesc: 'Per orang (Tiket + Makan)',
+                openMapsBtn: 'BUKA GOOGLE MAPS'
             },
             en: {
+                regGiftLabel: 'SPECIAL GIFT',
+                regGift: 'Get 7 Free Credits on Your First Registration',
                 routeBack: 'Back',
                 routeTranslateLabel: 'CURATED ITINERARY',
                 routeStartLoc: 'Starting Point',
@@ -1873,17 +1912,159 @@
                 receiptItinerary: 'Itinerary Slip',
                 receiptDate: 'Date',
                 receiptRef: 'Ref No',
-                receiptCost: 'COST'
+                receiptCost: 'COST',
+                receiptQty: 'QTY',
+                receiptDest: 'DESTINATION / ACTIVITY',
+                receiptThanks: 'Thank You!',
+                receiptService: 'SERVICE',
+                estBiayaLabel: 'ESTIMATED COST',
+                estBiayaDesc: 'Per person (Tickets + Food)',
+                openMapsBtn: 'OPEN GOOGLE MAPS'
             },
-            es: { routeBack: 'Volver', routeTranslateLabel: 'ITINERARIO', routeStartLoc: 'Punto de Partida', routeFound: 'Ubicación detectada', routeGoBtn: '¡Listo para Salir!' },
-            fr: { routeBack: 'Retour', routeTranslateLabel: 'ITINÉRAIRE', routeStartLoc: 'Point de Départ', routeFound: 'Emplacement detecté', routeGoBtn: 'Prêt à Partir !' },
-            ja: { routeBack: '戻る', routeTranslateLabel: '厳選された旅程', routeStartLoc: '出発点', routeFound: '位置を検出しました', routeGoBtn: '今すぐ出発する！' },
-            ko: { routeBack: '뒤로가기', routeTranslateLabel: '추천 일정', routeStartLoc: '출발지', routeFound: '위치 확인됨 (출발 준비 완료!)', routeGoBtn: '지금 출발할 준비 완료!' },
-            zh: { routeBack: '返回', routeTranslateLabel: '精选行程', routeStartLoc: '出发点', routeFound: '检测到位置，准备出发！', routeGoBtn: '准备好出发了！' },
-            ru: { routeBack: 'Назад', routeTranslateLabel: 'ВАШ МАРШРУТ', routeStartLoc: 'Точка Отправления', routeFound: 'Местоположение определено', routeGoBtn: 'Готовы к отправлению!' },
-            nl: { routeBack: 'Terug', routeTranslateLabel: 'GEKOZEN ROUTE', routeStartLoc: 'Vertrekpunt', routeFound: 'Locatie gedetecteerd', routeGoBtn: 'Klaar om te Gaan!' },
-            af: { routeBack: 'Terug', routeTranslateLabel: 'GEKOSE ROETE', routeStartLoc: 'Vertrekpunt', routeFound: 'Ligging opgespoor', routeGoBtn: 'Gereed om te Vertrek!' },
-            ar: { routeBack: 'رجوع', routeTranslateLabel: 'مسار مختار', routeStartLoc: 'نقطة الانطلاق', routeFound: 'تم تحديد الموقع', routeGoBtn: 'مستعد للانطلاق!' }
+            es: {
+                regGiftLabel: 'REGALO ESPECIAL',
+                regGift: 'Obtén 7 créditos gratis al registrarte por primera vez',
+                routeBack: 'Volver', routeTranslateLabel: 'ITINERARIO CURADO', routeStartLoc: 'Punto de partida', routeFound: 'Ubicación detectada (¡Listo para ir!)', routeGoBtn: '¡Listo para partir ahora!',
+                shareTitle: 'Compartir en redes 🚀', tabVisual: 'Recibo visual', tabCaption: 'Subtítulo viral',
+                receiptDesc: '¡Comparte este "Recibo de viaje" estético en Instagram Story o X!', saveImage: 'Guardar imagen',
+                chooseVibe: 'Elegir vibración', genCaption: 'Generar subtítulo viral', captionPlaceholder: 'El subtítulo aparecerá aquí...',
+                vibeFlex: '✨ Flexing (Insta)', vibeFlexDesc: 'Corto, estético, genial',
+                vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Atractivo, estilo hilo',
+                vibeWitty: '😎 Ingenioso/Divertido', vibeWittyDesc: 'Relajado, un poco ingenioso',
+                vibeHealing: '🍃 Healing (Suave)', vibeHealingDesc: 'Profundo, emocional, suave',
+                genVisual: 'Generando visual...', receiptItinerary: 'Hoja de itinerario', receiptDate: 'Fecha', receiptRef: 'Nº Ref', receiptCost: 'COSTO',
+                receiptQty: 'CANT', receiptDest: 'DESTINO / ACTIVIDAD',
+                receiptThanks: '¡Gracias!', receiptService: 'SERVICIO',
+                estBiayaLabel: 'COSTO ESTIMADO', estBiayaDesc: 'Por persona (Tickets + Comida)', openMapsBtn: 'ABRIR GOOGLE MAPS'
+            },
+            fr: {
+                regGiftLabel: 'CADEAU SPÉCIAL',
+                regGift: 'Obtenez 7 crédits gratuits lors de votre première inscription',
+                routeBack: 'Retour', routeTranslateLabel: 'ITINÉRAIRE', routeStartLoc: 'Point de départ', routeFound: 'Emplacement détecté', routeGoBtn: 'Prêt à partir maintenant !',
+                shareTitle: 'Partager 🚀', tabVisual: 'Reçu visuel', tabCaption: 'Légende virale',
+                receiptDesc: 'Partagez ce « reçu de voyage » esthétique en story Instagram ou sur X !', saveImage: 'Enregistrer',
+                chooseVibe: 'Choisir l\'ambiance', genCaption: 'Générer une légende', captionPlaceholder: 'La légende apparaîtra ici...',
+                vibeFlex: '✨ Flexing (Insta)', vibeFlexDesc: 'Court, esthétique, cool',
+                vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Engageant, style thread',
+                vibeWitty: '😎 Spirituel/Drôle', vibeWittyDesc: 'Décontracté, un peu spirituel',
+                vibeHealing: '🍃 Healing (Doux)', vibeHealingDesc: 'Profond, émotionnel, doux',
+                genVisual: 'Génération visuelle...', receiptItinerary: 'Fiche d\'itinéraire', receiptDate: 'Date', receiptRef: 'Réf No', receiptCost: 'COÛT',
+                receiptQty: 'QTÉ', receiptDest: 'DESTINATION / ACTIVITÉ',
+                receiptThanks: 'Merci !', receiptService: 'SERVICE',
+                estBiayaLabel: 'COÛT ESTIMÉ', estBiayaDesc: 'Par personne (Tickets + Repas)', openMapsBtn: 'OUVRIR GOOGLE MAPS'
+            },
+            ja: {
+                regGiftLabel: 'スペシャルギフト',
+                regGift: '初回登録で7つの無料クレジットをゲット',
+                routeBack: '戻る', routeTranslateLabel: '厳選された旅程', routeStartLoc: '出発点', routeFound: '位置を検出しました', routeGoBtn: '今すぐ出発する！',
+                shareTitle: 'SNSでシェア 🚀', tabVisual: 'ビジュアルレシート', tabCaption: 'バイラルキャプション',
+                receiptDesc: 'このエステティックな「トラベルレシート」をInstagramストーリーズやXでシェアしましょう！', saveImage: '画像を保存',
+                chooseVibe: 'キャプション의 雰囲気を選択', genCaption: 'バイラルキャプションを作成', captionPlaceholder: 'キャプションがここに表示されます...',
+                vibeFlex: '✨ フレックス (Insta)', vibeFlexDesc: '短く、エステティックで、クール',
+                vibeStory: '🧵 ストーリータイム (X)', vibeStoryDesc: '魅力的、スレッド形式',
+                vibeWitty: '😎 ウィット/面白い', vibeWittyDesc: 'リラックスした、少しウィットに富んだ',
+                vibeHealing: '🍃 ヒーリング (ソフト)', vibeHealingDesc: '深い、感情的、ソフト',
+                genVisual: 'ビジュアルを生成中...', receiptItinerary: '旅程伝票', receiptDate: '日付', receiptRef: '参照番号', receiptCost: '費用',
+                receiptQty: '数量', receiptDest: '目的地 / アクティビティ',
+                receiptThanks: 'ありがとうございました！', receiptService: 'サービス',
+                estBiayaLabel: '見積もり費用', estBiayaDesc: '一人当たり（チケット＋食事）', openMapsBtn: 'Googleマップを開く'
+            },
+            ko: {
+                regGiftLabel: '특별 선물',
+                regGift: '첫 회원가입 시 7개 무료 크레딧 증정',
+                routeBack: '뒤로가기', routeTranslateLabel: '추천 일정', routeStartLoc: '출발지', routeFound: '위치 확인됨 (출발 준비 완료!)', routeGoBtn: '지금 출발할 준비 완료!',
+                shareTitle: '소셜에 공유하기 🚀', tabVisual: '비주얼 영수증', tabCaption: '바이럴 캡션',
+                receiptDesc: '이 감각적인 "여행 영수증"을 인스타그램 스토리나 X에 공유해보세요!', saveImage: '이미지 저장',
+                chooseVibe: '캡션 분위기 선택', genCaption: '바이럴 캡션 생성', captionPlaceholder: '캡션이 여기에 나타납니다...',
+                vibeFlex: '✨ 플렉스 (Insta)', vibeFlexDesc: '짧고 감각적이며 멋진',
+                vibeStory: '🧵 스토리타임 (X)', vibeStoryDesc: '매력적인 스레드 스타일',
+                vibeWitty: '😎 재치/웃음', vibeWittyDesc: '편안하고 약간 재치 있는',
+                vibeHealing: '🍃 힐링 (소프트)', vibeHealingDesc: '깊고 감성적이며 부드러운',
+                genVisual: '비주얼 생성 중...', receiptItinerary: '여행 명세서', receiptDate: '날짜', receiptRef: '참조 번호', receiptCost: '비용',
+                receiptQty: '수량', receiptDest: '목적지 / 활동',
+                receiptThanks: '감사합니다!', receiptService: '서비스',
+                estBiayaLabel: '예상 비용', estBiayaDesc: '1인당 (티켓 + 식사)', openMapsBtn: '구글 지도 열기'
+            },
+            zh: {
+                regGiftLabel: '特别礼品',
+                regGift: '首次注册即可获赠 7 个免费积分',
+                routeBack: '返回', routeTranslateLabel: '精选行程', routeStartLoc: '出发点', routeFound: '检测到位置，准备出发！', routeGoBtn: '准备好出发了！',
+                shareTitle: '分享到社交媒体 🚀', tabVisual: '可视化收据', tabCaption: '热门文案',
+                receiptDesc: '将这张精美的“旅行收据”分享到 Instagram Story 或 X！', saveImage: '保存图片',
+                chooseVibe: '选择文案风格', genCaption: '生成热门文案', captionPlaceholder: '文案将显示在这里...',
+                vibeFlex: '✨ 炫耀 (Insta)', vibeFlexDesc: '短小、精美、酷炫',
+                vibeStory: '🧵 讲故事 (X)', vibeStoryDesc: '引人入胜、推文式风格',
+                vibeWitty: '😎 幽默/有趣', vibeWittyDesc: '轻松、有点俏皮',
+                vibeHealing: '🍃 治愈 (柔和)', vibeHealingDesc: '深沉、情感、柔和',
+                genVisual: '正在生成可视化图片...', receiptItinerary: '行程单', receiptDate: '日期', receiptRef: '参考编号', receiptCost: '费用',
+                receiptQty: '数量', receiptDest: '目的地 / 活动',
+                receiptThanks: '谢谢！', receiptService: '服务',
+                estBiayaLabel: '预估费用', estBiayaDesc: '每人（门票 + 餐饮）', openMapsBtn: '打开谷歌地图'
+            },
+            ru: {
+                regGiftLabel: 'СПЕЦИАЛЬНЫЙ ПОДАРОК',
+                regGift: 'Получите 7 бесплатных кредитов при первой регистрации',
+                routeBack: 'Назад', routeTranslateLabel: 'ВАШ МАРШРУТ', routeStartLoc: 'Точка Отправления', routeFound: 'Местоположение определено', routeGoBtn: 'Готовы к отправлению!',
+                shareTitle: 'Поделиться 🚀', tabVisual: 'Визуальный Чек', tabCaption: 'Виральный Заголовок',
+                receiptDesc: 'Поделитесь этим эстетичным "Тревел-чеком" в Instagram или X!', saveImage: 'Сохранить',
+                chooseVibe: 'Выберите Настроение', genCaption: 'Создать Заголовок', captionPlaceholder: 'Заголовок появится здесь...',
+                vibeFlex: '✨ Флекс (Insta)', vibeFlexDesc: 'Коротко, эстетично, круто',
+                vibeStory: '🧵 История (X)', vibeStoryDesc: 'Вовлекающе, в стиле треда',
+                vibeWitty: '😎 Остроумно', vibeWittyDesc: 'Расслабленно, с юмором',
+                vibeHealing: '🍃 Хилинг (Мягко)', vibeHealingDesc: 'Глубоко, эмоционально',
+                genVisual: 'Генерация...', receiptItinerary: 'Маршрутный Лист', receiptDate: 'Дата', receiptRef: '№ Реф', receiptCost: 'ЦЕНА',
+                receiptQty: 'КОЛ-ВО', receiptDest: 'МЕСТО / АКТИВНОСТЬ',
+                receiptThanks: 'Спасибо!', receiptService: 'СЕРВИС',
+                estBiayaLabel: 'ОЦЕНКА ЗАТРАТ', estBiayaDesc: 'На человека (Билеты + Еда)', openMapsBtn: 'ОТКРЫТЬ GOOGLE MAPS'
+            },
+            nl: {
+                regGiftLabel: 'SPECIALE CADEAU',
+                regGift: 'Ontvang 7 gratis credits bij je eerste registratie',
+                routeBack: 'Terug', routeTranslateLabel: 'GEKOZEN ROUTE', routeStartLoc: 'Vertrekpunt', routeFound: 'Locatie gedetecteerd', routeGoBtn: 'Klaar om te Gaan!',
+                shareTitle: 'Deel op Socials 🚀', tabVisual: 'Visueel Bonnetje', tabCaption: 'Virale Bijschrift',
+                receiptDesc: 'Deel dit esthetische "Reisbonnetje" op Instagram Story of X!', saveImage: 'Afbeelding Opslaan',
+                chooseVibe: 'Kies Bijschrift Vibe', genCaption: 'Genereer Virale Bijschrift', captionPlaceholder: 'Bijschrift verschijnt hier...',
+                vibeFlex: '✨ Flexen (Insta)', vibeFlexDesc: 'Kort, estethisch, cool',
+                vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Boeiend, thread-stijl',
+                vibeWitty: '😎 Geestig/Grappig', vibeWittyDesc: 'Ontspannen, beetje gevat',
+                vibeHealing: '🍃 Healing (Zacht)', vibeHealingDesc: 'Diep, emotioneel, zacht',
+                genVisual: 'Visual Genereren...', receiptItinerary: 'Reisbon', receiptDate: 'Datum', receiptRef: 'Ref Nr', receiptCost: 'KOSTEN',
+                receiptQty: 'AANT', receiptDest: 'BESTEMMING / ACTIVITEIT',
+                receiptThanks: 'Bedankt!', receiptService: 'SERVICE',
+                estBiayaLabel: 'GESCHATTE KOSTEN', estBiayaDesc: 'Per persoon (Tickets + Eten)', openMapsBtn: 'OPEN GOOGLE MAPS'
+            },
+            af: {
+                regGiftLabel: 'SPESIALE GESKENK',
+                regGift: 'Kry 7 gratis krediete by jou eerste registrasie',
+                routeBack: 'Terug', routeTranslateLabel: 'GEKOSE ROETE', routeStartLoc: 'Vertrekpunt', routeFound: 'Ligging opgespoor', routeGoBtn: 'Gereed om te Vertrek!',
+                shareTitle: 'Deel op Sosiale Media 🚀', tabVisual: 'Visuele Kwitansie', tabCaption: 'Virale Byskrif',
+                receiptDesc: 'Deel hierdie estetiese "Reis-kwitansie" op Instagram Story of X!', saveImage: 'Stoor Beeld',
+                chooseVibe: 'Kies Byskrif-vibe', genCaption: 'Maak Virale Byskrif', captionPlaceholder: 'Byskrif sal hier verskyn...',
+                vibeFlex: '✨ Flex (Insta)', vibeFlexDesc: 'Kort, esteties, koel',
+                vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Boeiend, draad-styl',
+                vibeWitty: '😎 Geestig/Snaaks', vibeWittyDesc: 'Ontspanne, bietjie geestig',
+                vibeHealing: '🍃 Healing (Sag)', vibeHealingDesc: 'Diep, emosioneel, sag',
+                genVisual: 'Maak Visual...', receiptItinerary: 'Reisstrokie', receiptDate: 'Datum', receiptRef: 'Verw Nr', receiptCost: 'KOSTE',
+                receiptQty: 'HPR', receiptDest: 'BESTEMMING / AKTIWITEIT',
+                receiptThanks: 'Dankie!', receiptService: 'DIENS',
+                estBiayaLabel: 'BERAAMDE KOSTE', estBiayaDesc: 'Per persoon (Kaartjies + Kos)', openMapsBtn: 'MAAK GOOGLE MAPS OOP'
+            },
+            ar: {
+                regGiftLabel: 'هدية خاصة',
+                regGift: 'احصل على 7 أرصدة مجانية عند التسجيل لأول مرة',
+                routeBack: 'رجوع', routeTranslateLabel: 'مسار مختار', routeStartLoc: 'نقطة الانطلاق', routeFound: 'تم تحديد الموقع', routeGoBtn: 'مستعد للانطلاق!',
+                shareTitle: 'مشاركة 🚀', tabVisual: 'إيصال بصري', tabCaption: 'تسمية توضيحية',
+                receiptDesc: 'شارك هذا "إيصال السفر" الجمالي على انستقرام أو X!', saveImage: 'حفظ الصورة',
+                chooseVibe: 'اختر المود', genCaption: 'توليد التسمية', captionPlaceholder: 'ستظهر التسمية هنا...',
+                vibeFlex: '✨ استعراض (Insta)', vibeFlexDesc: 'قصير، جمالي، رائع',
+                vibeStory: '🧵 قصة (X)', vibeStoryDesc: 'جذاب، أسلوب ثريد',
+                vibeWitty: '😎 فكاهي', vibeWittyDesc: 'مسترخ، مضحك قليلاً',
+                vibeHealing: '🍃 استرخاء (ناعم)', vibeHealingDesc: 'عميق، عاطفي، ناعم',
+                genVisual: 'جاري التوليد البصري...', receiptItinerary: 'قسيمة المسار', receiptDate: 'التاريخ', receiptRef: 'رقم المرجع', receiptCost: 'التكلفة',
+                receiptQty: 'الكمية', receiptDest: 'الوجهة / النشاط',
+                receiptThanks: 'شكراً لك!', receiptService: 'خدمة',
+                estBiayaLabel: 'التكلفة التقديرية', estBiayaDesc: 'للشخص الواحدة (تذاكر + طعام)', openMapsBtn: 'فتح خرائط جوجل'
+            }
         };
 
         function updateRouteLanguage(lang) {
@@ -1891,7 +2072,11 @@
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (dict[key]) {
-                    el.innerText = dict[key];
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = dict[key];
+                    } else {
+                        el.innerText = dict[key];
+                    }
                 }
             });
             if (lang === 'ar') {

@@ -39,6 +39,7 @@ pub struct RouteTemplate {
     pub route_json: String,
     pub current_date: String,
     pub google_maps_api_key: String,
+    pub user: Option<db::User>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -49,6 +50,7 @@ pub struct GeneratePayload {
     pub links: Option<String>,
     pub lat: Option<f64>,
     pub lng: Option<f64>,
+    pub lang: Option<String>,
 }
 
 /// Helper to get or create a guest session ID from cookies
@@ -262,7 +264,8 @@ pub async fn generate(
         effective_prompt
     };
 
-    match sumopod::generate_route(&state.client, &final_prompt, &None).await {
+    let lang = payload.lang.clone().unwrap_or_else(|| "id".to_string());
+    match sumopod::generate_route(&state.client, &final_prompt, &lang, &None).await {
         Ok(route_data) => {
             let mock_id = Uuid::new_v4();
             let route_json = serde_json::to_value(&route_data).unwrap_or(serde_json::Value::Null);
@@ -305,12 +308,19 @@ pub async fn generate(
 
 pub async fn route_handler(
     State(state): State<AppState>,
-    _headers: HeaderMap,
+    headers: HeaderMap,
     Path(id_str): Path<String>,
 ) -> impl IntoResponse {
     let id = match Uuid::parse_str(&id_str) {
         Ok(u) => u,
         Err(_) => return (StatusCode::BAD_REQUEST, "Invalid route ID").into_response(),
+    };
+
+    let auth_user = auth::get_current_user(&headers);
+    let db_user = if let Some(ref u) = auth_user {
+        db::find_user_by_email(&state.db, &u.email).await.unwrap_or(None)
+    } else {
+        None
     };
 
     if let Ok(Some(route_json)) = db::find_route_by_id(&state.db, id).await {
@@ -322,6 +332,7 @@ pub async fn route_handler(
                 route_json: route_json_str,
                 current_date: chrono::Local::now().format("%d %b %Y").to_string(),
                 google_maps_api_key: std::env::var("GOOGLE_MAPS_API_KEY").unwrap_or_default(),
+                user: db_user,
             };
             return Html(template.render().unwrap()).into_response();
         }
@@ -665,6 +676,7 @@ pub async fn payment_callback(
 pub struct CaptionRequest {
     pub vibe: String,
     pub places: Vec<String>,
+    pub lang: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -701,7 +713,8 @@ pub async fn generate_caption_handler(
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(CaptionResponse { caption: None, error: Some(format!("Quota check failed: {}", e)) })),
     }
 
-    match sumopod::generate_caption(&state.client, &payload.vibe, &payload.places).await {
+    let lang = payload.lang.clone().unwrap_or_else(|| "id".to_string());
+    match sumopod::generate_caption(&state.client, &payload.vibe, &payload.places, &lang).await {
         Ok(caption) => {
             (StatusCode::OK, Json(CaptionResponse { caption: Some(caption), error: None }))
         }
