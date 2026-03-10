@@ -621,7 +621,12 @@ pub async fn payment_callback(
                         _ => "Topup Successful - Ulyn AI",
                     };
 
-                    let _ = mail::send_html_email(Some(&state), &u.email, subject, &email_body).await;
+                    let res = mail::send_html_email(Some(&state), &u.email, subject, &email_body).await;
+                    if let Err(e) = res {
+                        tracing::error!("Webhook: Failed to send success email to {}: {}", u.email, e);
+                    } else {
+                        tracing::info!("Webhook: Success email sent to {}", u.email);
+                    }
                 }
             }
         }

@@ -60,12 +60,119 @@
             top: 40px;
             bottom: -40px;
             width: 2px;
-            background-color: #e2e8f0;
+            background: linear-gradient(to bottom, #f43f5e 0%, #e2e8f0 100%);
             z-index: 0;
+            opacity: 0.5;
         }
 
         .step-last .step-line {
             display: none;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .swipe-indicator {
+            animation: bounceLeftRight 2s infinite;
+        }
+
+        @keyframes bounceLeftRight {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(10px);
+            }
+        }
+
+        .selected-ring {
+            box-shadow: 0 0 0 3px #f43f5e;
+            border-color: #f43f5e !important;
+        }
+
+        .minimalist-tips {
+            background-color: #f0f4ff;
+            border-radius: 9999px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark .minimalist-tips {
+            background-color: #1e293b;
+        }
+
+        .tips-text {
+            color: #4f46e5;
+            font-weight: 800;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .dark .tips-text {
+            color: #818cf8;
+        }
+
+        .tips-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .tips-content.expanded {
+            max-height: 200px;
+            margin-top: 8px;
+        }
+
+        .restore-btn {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom Checkmark */
+        .check-circle {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 28px;
+            height: 28px;
+            background: #f43f5e;
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 20;
         }
 
         /* Leaflet custom styling */
@@ -151,89 +258,145 @@
         <div class="sidebar-scroll px-8 pb-32 no-scrollbar">
 
             <!-- Step 0: User Location -->
-            <div class="relative pl-8 border-l-2 border-dashed border-slate-200 dark:border-slate-800 pb-10 group ml-4">
+            <div id="step-0-container"
+                class="relative pl-8 border-l-2 border-dashed border-slate-200 dark:border-slate-800 pb-12 group ml-4">
                 <div
-                    class="absolute -left-[11px] top-0 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-md flex items-center justify-center bg-emerald-500">
+                    class="absolute -left-[11px] top-0 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-xl flex items-center justify-center bg-rose-500 z-10">
                 </div>
-                <div class="space-y-3">
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
-                            STEP 0
-                        </span>
-                        <span
-                            class="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-[0.2em]"
-                            data-i18n="routeStartLoc">
-                            STARTING POINT
-                        </span>
+
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 rounded-lg uppercase tracking-widest">STEP
+                                0</span>
+                            <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest">STARTING
+                                POINT</span>
+                        </div>
                     </div>
-                    <h3 class="font-black text-slate-900 dark:text-slate-100 text-lg leading-tight" id="userLocText">
-                        Mendeteksi lokasi kamu...</h3>
-                    <div
-                        class="rounded-2xl shadow-sm border border-blue-100 bg-blue-50/10 dark:border-blue-900/30 dark:bg-blue-900/10 p-4">
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-start">
-                            <i class="fas fa-location-crosshairs mt-0.5 mr-2 text-blue-400 flex-shrink-0"></i>
-                            <span data-i18n="routeFound">Mendeteksi lokasi kamu...</span>
-                        </p>
+
+                    <h2 class="text-2xl font-black text-slate-900 dark:text-white leading-tight italic"
+                        id="userLocText">
+                        Mendeteksi lokasi kamu...</h2>
+
+                    <div class="flex flex-wrap gap-2">
+                        <div
+                            class="px-4 py-2 rounded-full glass-card flex items-center gap-2 border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <i class="fas fa-location-dot text-rose-500 text-xs"></i>
+                            <span
+                                class="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest"
+                                data-i18n="routeFound">Mencari Koordinat...</span>
+                        </div>
+                        <div
+                            class="px-4 py-2 rounded-full glass-card flex items-center gap-2 border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <i class="fas fa-cloud-sun text-amber-500 text-xs"></i>
+                            <span
+                                class="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{{
+                                route.weather }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Route Steps -->
             {% for (index, step) in route.steps.iter().enumerate() %}
-            <div
-                class="relative pl-8 border-l-2 border-dashed border-slate-200 dark:border-slate-800 pb-10 group ml-4 {% if index == route.steps.len() - 1 %}border-transparent{% endif %}">
+            <div id="step-container-{{ index }}"
+                class="step-wrapper relative pl-8 border-l-2 border-dashed border-slate-200 dark:border-slate-800 pb-12 group ml-4 {% if index == route.steps.len() - 1 %}border-transparent{% endif %}">
+                <!-- Dot / Index -->
                 <div
-                    class="absolute -left-[11px] top-0 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-md flex items-center justify-center {% if index == 0 %}bg-rose-500{% else %}bg-slate-400{% endif %} text-white text-[10px] font-bold">
+                    class="absolute -left-[11px] top-0 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-lg flex items-center justify-center bg-slate-400 text-white text-[10px] font-bold z-10">
                     {{ index + 1 }}
                 </div>
 
-                <div class="space-y-4">
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
-                            STEP {{ index + 1 }}
-                        </span>
-                        {% if index == 0 %}
-                        <div
-                            class="bg-gradient-to-r from-rose-600 via-orange-500 to-amber-500 text-white text-[9px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-2 uppercase tracking-widest">
-                            <i class="fas fa-gem text-[8px] animate-pulse"></i> EDITOR'S CHOICE
+                <!-- Hidden State Placeholder -->
+                <div id="step-hidden-{{ index }}"
+                    class="hidden py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 restore-btn">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Destinasi
+                        Tersembunyi</span>
+                    <button onclick="restoreStep({{ index }})"
+                        class="px-4 py-2 bg-rose-500 text-white text-[10px] font-black rounded-lg shadow-lg hover:bg-rose-600 transition-all uppercase tracking-widest">
+                        <i class="fas fa-undo mr-1"></i> Pulihkan
+                    </button>
+                </div>
+
+                <!-- Step Content -->
+                <div id="step-content-{{ index }}" class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 rounded-lg uppercase tracking-widest">STEP
+                                {{ index + 1 }}</span>
+                            <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest">{{
+                                step.category }}</span>
                         </div>
-                        {% endif %}
+                        <button onclick="hideStep({{ index }})"
+                            class="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
                     </div>
 
-                    <div
-                        class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-all">
-                        <div class="p-6">
-                            <div class="flex justify-between items-start mb-3">
-                                <h3
-                                    class="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                                    {{ step.location_name }}</h3>
+                    <h3 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight italic">
+                        {{ step.location_name }}</h3>
+
+                    <div class="space-y-2">
+                        <div class="minimalist-tips" onclick="toggleTips({{ index }})">
+                            <i class="fas fa-wand-magic-sparkles text-indigo-500 text-sm"></i>
+                            <span class="tips-text">LIHAT TIPS DARI PERSONA KAMU</span>
+                            <i id="tips-chevron-{{ index }}"
+                                class="fas fa-chevron-down ml-auto text-indigo-400 text-[10px] transition-transform"></i>
+                        </div>
+                        <div id="tips-content-{{ index }}" class="tips-content px-6">
+                            <p
+                                class="text-[11px] font-bold text-indigo-600/80 dark:text-indigo-400/80 uppercase tracking-widest leading-relaxed">
+                                {{ step.tips }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-8 mb-3 flex items-center justify-between px-1">
+                        <span class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em]">REKOMENDASI
+                            UTAMA</span>
+                    </div>
+
+                    <div id="main-card-{{ index }}" onclick="selectOriginal({{ index }})"
+                        class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all relative group cursor-pointer selected-ring">
+
+                        <!-- Choice Marker -->
+                        <div id="main-check-{{ index }}" class="check-circle">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <!-- Rating Label -->
+                        <div
+                            class="absolute top-4 right-4 z-10 px-3 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl flex items-center gap-1.5 shadow-xl border border-slate-100 dark:border-slate-800">
+                            <span class="text-xs font-black text-slate-900 dark:text-white">{{
+                                step.rating.unwrap_or(0.0) }}</span>
+                            <i class="fas fa-star text-amber-500 text-[10px]"></i>
+                        </div>
+
+                        <div class="p-8">
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed font-medium">
+                                "{{ step.description }}"</p>
+
+                            <div class="flex items-center justify-between">
                                 <div
-                                    class="flex items-center gap-1 px-2 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 rounded-lg text-xs font-black">
-                                    <i class="fas fa-star text-amber-500"></i> {{ step.rating.unwrap_or(0.0) }}
+                                    class="inline-flex px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl text-[10px] font-black tracking-widest uppercase border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                    <i class="fas fa-tag mr-2 opacity-70"></i> {{
+                                    step.price_range.as_deref().unwrap_or("TBA") }}
                                 </div>
                             </div>
-                            <p
-                                class="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed italic">
-                                "{{ step.description }}"</p>
-                            <div
-                                class="inline-flex px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-xl text-[10px] font-black tracking-widest uppercase border border-emerald-100 dark:border-emerald-800">
-                                {{ step.price_range.as_deref().unwrap_or("FREE / TBA") }}</div>
                         </div>
 
                         {% match step.thumbnail_url %}
                         {% when Some with (thumb) %}
-                        <div class="relative h-48 cursor-pointer group"
+                        <div class="relative h-64 cursor-pointer group/vid"
                             data-video-url="{% match step.video_url %}{% when Some with (vu) %}{{ vu }}{% when None %}{% endmatch %}"
                             onclick="openVideoModal(this.dataset.videoUrl)">
                             <img src="{{ thumb }}"
-                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-90 group-hover:brightness-100">
+                                class="w-full h-full object-cover transition-transform duration-700 brightness-90 group-hover/vid:scale-110">
                             <div
-                                class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                class="absolute inset-0 bg-black/20 group-hover/vid:bg-black/10 transition-colors flex items-center justify-center">
                                 <div
-                                    class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-rose-500 shadow-2xl transition-transform transform group-hover:scale-110">
-                                    <i class="fas fa-play ml-1"></i>
+                                    class="w-16 h-16 rounded-full bg-white/90 dark:bg-slate-900/90 flex items-center justify-center text-rose-500 shadow-2xl transition-transform transform group-hover/vid:scale-110">
+                                    <i class="fas fa-play text-xl ml-1"></i>
                                 </div>
                             </div>
                         </div>
@@ -244,32 +407,51 @@
                     <!-- Candidates / Alternatives -->
                     {% if let Some(candidates) = step.candidates %}
                     {% if candidates.len() > 0 %}
-                    <div class="mt-4 space-y-3">
-                        <p
-                            class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-2 flex items-center gap-2">
-                            <i class="fas fa-map-pin text-rose-500"></i> ALTERNATIF SEKITAR
-                        </p>
-                        <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-2 -mx-2">
-                            {% for cand in candidates %}
-                            <div
-                                class="min-w-[200px] bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex flex-col gap-3 group/cand transition-all hover:border-amber-200 dark:hover:border-amber-900 shadow-sm">
+                    <div class="mt-8 space-y-4">
+                        <div class="relative flex items-center py-2">
+                            <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                            <span
+                                class="flex-shrink mx-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">ATAU
+                                PILIH KURSI CADANGAN ({{ candidates.len() }})</span>
+                            <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                        </div>
+
+                        <div class="flex gap-4 overflow-x-auto no-scrollbar pb-6 px-2 -mx-2 snap-x">
+                            {% for (c_idx, cand) in candidates.iter().enumerate() %}
+                            <div id="cand-{{ index }}-{{ c_idx }}" onclick="selectCandidate({{ index }}, {{ c_idx }})"
+                                class="snap-start min-w-[260px] max-w-[260px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 rounded-[2rem] flex flex-col gap-4 relative transition-all hover:shadow-xl cursor-pointer shadow-sm group/cand">
+
+                                <div id="check-{{ index }}-{{ c_idx }}" class="check-circle hidden">
+                                    <i class="fas fa-check"></i>
+                                </div>
+
                                 <div class="flex justify-between items-start">
                                     <h4
-                                        class="text-[11px] font-black text-slate-800 dark:text-white leading-tight uppercase line-clamp-1 group-hover/cand:text-amber-500 transition-colors">
+                                        class="text-sm font-black text-slate-800 dark:text-white leading-tight uppercase line-clamp-2">
                                         {{ cand.name }}</h4>
                                     <div
-                                        class="flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 dark:bg-amber-900/40 text-amber-600 rounded-md text-[9px] font-black">
-                                        <i class="fas fa-star text-[7px]"></i> {{ cand.rating }}
+                                        class="flex items-center gap-1.5 px-2 py-1 bg-amber-50 dark:bg-amber-900/40 text-amber-600 rounded-xl text-[10px] font-black border border-amber-100/50">
+                                        <i class="fas fa-star text-[8px]"></i> {{ cand.rating }}
                                     </div>
                                 </div>
-                                <div class="space-y-1">
+                                <div class="space-y-3">
                                     <p
-                                        class="text-[9px] text-slate-500 dark:text-slate-400 line-clamp-1 flex items-center gap-1">
-                                        <i class="fas fa-map-marker-alt text-[8px] opacity-70"></i> {{ cand.address }}
+                                        class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 flex items-start gap-2">
+                                        <i class="fas fa-location-dot mt-0.5 text-[10px] text-rose-500"></i> {{
+                                        cand.address }}
                                     </p>
-                                    <div class="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{{
-                                        cand.price_range.as_deref().unwrap_or("TBA") }}</div>
+                                    <div class="flex items-center justify-between mt-2">
+                                        <div class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                                            {{ cand.price_range.as_deref().unwrap_or("TBA") }}</div>
+                                    </div>
                                 </div>
+
+                                {% if c_idx == 0 %}
+                                <div
+                                    class="mt-2 flex items-center gap-2 text-[9px] font-black text-rose-500 uppercase tracking-widest swipe-indicator opacity-50">
+                                    <span>Slide ke kanan</span> <i class="fas fa-arrow-right"></i>
+                                </div>
+                                {% endif %}
                             </div>
                             {% endfor %}
                         </div>
@@ -319,6 +501,18 @@
                     class="px-3 py-1.5 rounded-full bg-amber-500 text-white shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5 hover:bg-amber-600 transition-all active:scale-95">
                     <i class="fas fa-cloud text-[9px]"></i> <span>WP</span>
                 </button>
+            </div>
+        </div>
+
+        <!-- Map Loading Overlay -->
+        <div id="map-loader"
+            class="absolute inset-0 z-[1100] bg-white/40 dark:bg-slate-900/40 backdrop-blur-[2px] hidden flex flex-col items-center justify-center transition-all duration-300">
+            <div
+                class="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700">
+                <div class="w-5 h-5 border-3 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+                <span
+                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-slate-300">Memperbarui
+                    Rute...</span>
             </div>
         </div>
 
@@ -725,6 +919,178 @@
             }
         }
 
+        function toggleTips(index) {
+            const content = document.getElementById(`tips-content-${index}`);
+            const chevron = document.getElementById(`tips-chevron-${index}`);
+            if (content) {
+                content.classList.toggle('expanded');
+                if (chevron) {
+                    if (content.classList.contains('expanded')) {
+                        chevron.style.transform = 'rotate(180deg)';
+                    } else {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                }
+            }
+        }
+
+        // --- STEP MANIPULATION LOGIC ---
+        var hiddenSteps = new Set();
+        var selectedCandidates = {}; // index -> candidate_index
+
+        function hideStep(index) {
+            hiddenSteps.add(index);
+            const content = document.getElementById(`step-content-${index}`);
+            const hidden = document.getElementById(`step-hidden-${index}`);
+            if (content) content.classList.add('hidden');
+            if (hidden) hidden.classList.remove('hidden');
+            updateRouteDataAndMap();
+        }
+
+        function restoreStep(index) {
+            hiddenSteps.delete(index);
+            const content = document.getElementById(`step-content-${index}`);
+            const hidden = document.getElementById(`step-hidden-${index}`);
+            if (content) content.classList.remove('hidden');
+            if (hidden) hidden.classList.add('hidden');
+            updateRouteDataAndMap();
+        }
+
+        function selectOriginal(stepIndex) {
+            delete selectedCandidates[stepIndex];
+
+            // Update UI: Main Card
+            const mainCard = document.getElementById(`main-card-${stepIndex}`);
+            const mainCheck = document.getElementById(`main-check-${stepIndex}`);
+            if (mainCard) mainCard.classList.add('selected-ring');
+            if (mainCheck) mainCheck.classList.remove('hidden');
+
+            // Update UI: Deselect Candidates
+            const step = rawRoute.steps[stepIndex];
+            if (step.candidates) {
+                step.candidates.forEach((_, i) => {
+                    const check = document.getElementById(`check-${stepIndex}-${i}`);
+                    const card = document.getElementById(`cand-${stepIndex}-${i}`);
+                    if (check) check.classList.add('hidden');
+                    if (card) card.classList.remove('selected-ring');
+                });
+            }
+
+            // Restore main card content display
+            const container = document.getElementById(`step-content-${stepIndex}`);
+            if (container) {
+                const title = container.querySelector('h3');
+                if (title) title.innerText = step.location_name;
+
+                const rating = container.querySelector('.absolute.top-4.right-4 span');
+                if (rating) rating.innerText = step.rating || '0.0';
+
+                const price = container.querySelector('.bg-emerald-50');
+                if (price) price.innerHTML = `<i class="fas fa-tag mr-2 opacity-70"></i> ${step.price_range || 'TBA'}`;
+
+                const thumb = container.querySelector('img');
+                if (thumb) thumb.src = step.thumbnail_url || '';
+
+                const videoDiv = container.querySelector('[data-video-url]');
+                if (videoDiv) videoDiv.dataset.videoUrl = step.video_url || '';
+            }
+
+            updateRouteDataAndMap();
+        }
+
+        function selectCandidate(stepIndex, candIndex) {
+            const step = rawRoute.steps[stepIndex];
+            const cand = step.candidates[candIndex];
+
+            // Update internal state
+            selectedCandidates[stepIndex] = candIndex;
+
+            // Update UI: Deselect Main Card
+            const mainCard = document.getElementById(`main-card-${stepIndex}`);
+            const mainCheck = document.getElementById(`main-check-${stepIndex}`);
+            if (mainCard) mainCard.classList.remove('selected-ring');
+            if (mainCheck) mainCheck.classList.add('hidden');
+
+            // Update UI: Toggle candidate checkmarks
+            step.candidates.forEach((_, i) => {
+                const check = document.getElementById(`check-${stepIndex}-${i}`);
+                const card = document.getElementById(`cand-${stepIndex}-${i}`);
+                if (check) {
+                    if (i === candIndex) check.classList.remove('hidden');
+                    else check.classList.add('hidden');
+                }
+                if (card) {
+                    if (i === candIndex) card.classList.add('selected-ring');
+                    else card.classList.remove('selected-ring');
+                }
+            });
+
+            // Update the main card display for this step
+            const container = document.getElementById(`step-content-${stepIndex}`);
+            if (container) {
+                const title = container.querySelector('h3');
+                if (title) title.innerText = cand.name;
+
+                const rating = container.querySelector('.absolute.top-4.right-4 span');
+                if (rating) rating.innerText = cand.rating;
+
+                const price = container.querySelector('.bg-emerald-50');
+                if (price) price.innerHTML = `<i class="fas fa-tag mr-2 opacity-70"></i> ${cand.price_range || 'TBA'}`;
+
+                // Update thumbnail if exists
+                const thumb = container.querySelector('img');
+                if (thumb && cand.thumbnail_url) {
+                    thumb.src = cand.thumbnail_url;
+                }
+
+                // Update video click handler
+                const videoDiv = container.querySelector('[data-video-url]');
+                if (videoDiv) {
+                    videoDiv.dataset.videoUrl = cand.video_url || '';
+                }
+            }
+
+            updateRouteDataAndMap();
+        }
+
+        function updateRouteDataAndMap() {
+            // Rebuild baseSteps and baseLatlngs based on current state
+            baseSteps = (rawRoute.steps || []).map((s, index) => ({ s, index }))
+                .filter(({ index }) => !hiddenSteps.has(index))
+                .map(({ s, index }) => {
+                    // Return original or selected candidate
+                    const candIdx = selectedCandidates[index];
+                    if (candIdx !== undefined && s.candidates && s.candidates[candIdx]) {
+                        const c = s.candidates[candIdx];
+                        console.log(`Step ${index}: Using candidate ${candIdx} (${c.name})`);
+                        return {
+                            ...s,
+                            location_name: c.name,
+                            latitude: c.latitude,
+                            longitude: c.longitude,
+                            address: c.address,
+                            price_range: c.price_range,
+                            rating: c.rating,
+                            thumbnail_url: c.thumbnail_url,
+                            video_url: c.video_url
+                        };
+                    }
+                    return s;
+                });
+
+            baseLatlngs = baseSteps.map(s => {
+                const lat = parseFloat(s.latitude);
+                const lng = parseFloat(s.longitude);
+                return [lat, lng];
+            }).filter(ll => !isNaN(ll[0]) && !isNaN(ll[1]));
+
+            console.log("Map Sync: Redrawing with", baseLatlngs.length, "points.");
+
+            // Redraw everything on map
+            drawInitialMarkers();
+            fetchAndDrawRoute();
+        }
+
         // --- EDIT ROUTE MODAL LOGIC ---
         var keepRecsChecked = true;
 
@@ -1100,8 +1466,12 @@
         function fetchAndDrawRoute() {
             if (!map || !routeLayers) return;
 
+            const loader = document.getElementById('map-loader');
+            if (loader) loader.classList.remove('hidden', 'opacity-0');
+
             const currentFetchId = ++lastRouteFetchId;
 
+            // Clear existing layers IMMEDIATELY
             if (usingGoogle) {
                 routeLayers.forEach(l => l.setMap(null));
                 routeLayers = [];
@@ -1119,7 +1489,6 @@
                 }
             }
             rawPoints = rawPoints.concat(baseLatlngs);
-            console.log("rawPoints for drawing:", rawPoints.length);
 
             // Filter points: remove duplicates (identical consecutive points)
             var points = [];
@@ -1129,7 +1498,6 @@
                 } else {
                     const prev = rawPoints[i - 1];
                     const curr = rawPoints[i];
-                    // If distance is significant (> 1 meter approx)
                     if (Math.abs(prev[0] - curr[0]) > 0.00001 || Math.abs(prev[1] - curr[1]) > 0.00001) {
                         points.push(curr);
                     }
@@ -1137,26 +1505,26 @@
             }
 
             if (points.length > 1) {
-                // FALLBACK POLYLINE
+                // FALLBACK POLYLINE: Draw immediately so the map isn't empty
                 if (usingGoogle) {
                     const fallback = new google.maps.Polyline({
                         path: points.map(p => ({ lat: p[0], lng: p[1] })),
                         geodesic: true,
                         strokeColor: '#f43f5e',
-                        strokeOpacity: 0.6,
-                        strokeWeight: 6,
+                        strokeOpacity: 0.4,
+                        strokeWeight: 4,
                         map: googleMap,
-                        zIndex: 0
+                        zIndex: 0,
+                        icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 2 }, offset: '0', repeat: '10px' }]
                     });
                     routeLayers.push(fallback);
                 } else {
-                    L.polyline(points, { color: '#f43f5e', weight: 6, opacity: 0.5, dashArray: '10, 10' }).addTo(routeLayers);
+                    L.polyline(points, { color: '#f43f5e', weight: 4, opacity: 0.4, dashArray: '5, 10' }).addTo(routeLayers);
                 }
 
                 var osrmCoords = points.map(ll => ll[1] + ',' + ll[0]).join(';');
                 var profile = currentTravelMode === 'walking' ? 'walking' : 'driving';
                 var osrmUrl = `https://router.project-osrm.org/route/v1/${profile}/` + osrmCoords + '?overview=full&geometries=geojson';
-                console.log("Fetching OSRM route:", { mode: profile, url: osrmUrl });
 
                 fetch(osrmUrl)
                     .then(response => response.json())
@@ -1183,21 +1551,14 @@
                                     const bounds = new google.maps.LatLngBounds();
                                     routeCoords.forEach(c => bounds.extend(c));
                                     googleMap.fitBounds(bounds, {
-                                        top: 100,
-                                        right: 100,
-                                        bottom: 100,
-                                        left: 100
+                                        top: 100, right: 100, bottom: 100, left: 100
                                     });
                                 }
                             } else {
                                 routeLayers.clearLayers();
                                 const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-
-                                // Glowing background line
                                 L.polyline(routeCoords, { color: '#be123c', weight: 12, opacity: 0.2 }).addTo(routeLayers);
-                                // Main visible line
                                 const mainPoly = L.polyline(routeCoords, { color: '#f43f5e', weight: 6, opacity: 1.0 }).addTo(routeLayers);
-
                                 if (routeCoords.length > 0) {
                                     map.fitBounds(mainPoly.getBounds(), { padding: [80, 80] });
                                 }
@@ -1206,11 +1567,10 @@
                     })
                     .catch(e => {
                         console.error("OSRM Route Fetch Error:", e);
-                        // Fallback: draw straight lines if OSRM fails
-                        if (usingGoogle) {
-                            // Already handled as fallback polyline remains in routeLayers
-                        } else {
-                            // Dotted line already added, just log it
+                    })
+                    .finally(() => {
+                        if (currentFetchId === lastRouteFetchId) {
+                            if (loader) loader.classList.add('hidden');
                         }
                     });
             } else if (points.length === 1) {
