@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::{mayar, sumopod, harvester, db, auth, mail, email_templates, AppState};
+use crate::{mayar, sumopod, harvester, db, auth, mail, email_templates, weather, AppState};
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -39,7 +39,6 @@ pub struct RouteTemplate {
     pub route_json: String,
     pub current_date: String,
     pub google_maps_api_key: String,
-    pub user: Option<db::User>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -265,7 +264,21 @@ pub async fn generate(
     };
 
     let lang = payload.lang.clone().unwrap_or_else(|| "id".to_string());
-    match sumopod::generate_route(&state.client, &final_prompt, &lang, &None).await {
+
+    // Fetch Weather if coordinates are provided
+    let weather_info = if let (Some(lat), Some(lng)) = (payload.lat, payload.lng) {
+        match weather::get_weather(&state.client, lat, lng, &lang).await {
+            Ok(w) => Some(w),
+            Err(e) => {
+                tracing::warn!("Failed to fetch real-time weather: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
+    match sumopod::generate_route(&state.client, &final_prompt, &lang, &weather_info).await {
         Ok(route_data) => {
             let mock_id = Uuid::new_v4();
             let route_json = serde_json::to_value(&route_data).unwrap_or(serde_json::Value::Null);
@@ -308,19 +321,12 @@ pub async fn generate(
 
 pub async fn route_handler(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _headers: HeaderMap,
     Path(id_str): Path<String>,
 ) -> impl IntoResponse {
     let id = match Uuid::parse_str(&id_str) {
         Ok(u) => u,
         Err(_) => return (StatusCode::BAD_REQUEST, "Invalid route ID").into_response(),
-    };
-
-    let auth_user = auth::get_current_user(&headers);
-    let db_user = if let Some(ref u) = auth_user {
-        db::find_user_by_email(&state.db, &u.email).await.unwrap_or(None)
-    } else {
-        None
     };
 
     if let Ok(Some(route_json)) = db::find_route_by_id(&state.db, id).await {
@@ -332,7 +338,6 @@ pub async fn route_handler(
                 route_json: route_json_str,
                 current_date: chrono::Local::now().format("%d %b %Y").to_string(),
                 google_maps_api_key: std::env::var("GOOGLE_MAPS_API_KEY").unwrap_or_default(),
-                user: db_user,
             };
             return Html(template.render().unwrap()).into_response();
         }

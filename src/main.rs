@@ -18,6 +18,7 @@ mod db;
 mod storage;
 mod mail;
 mod email_templates;
+mod weather;
 
 #[derive(Clone)]
 pub struct AppState {

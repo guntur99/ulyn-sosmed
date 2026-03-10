@@ -64,6 +64,7 @@ pub struct RouteStep {
 pub struct RouteCandidate {
     pub name: String,
     pub address: String,
+    pub description: String,
     #[serde(default)]
     pub latitude: f64,
     #[serde(default)]
@@ -74,13 +75,19 @@ pub struct RouteCandidate {
     pub video_url: Option<String>,
 }
 
-pub async fn generate_route(client: &Client, prompt: &str, lang: &str, links: &Option<String>) -> Result<RouteData, String> {
+pub async fn generate_route(client: &Client, prompt: &str, lang: &str, weather_info: &Option<String>) -> Result<RouteData, String> {
     let api_key = std::env::var("SUMOPOD_API_KEY").map_err(|_| "Missing SUMOPOD_API_KEY")?;
     let base_url = std::env::var("SUMOPOD_BASE_URL").map_err(|_| "Missing SUMOPOD_BASE_URL")?;
     let model = std::env::var("SUMOPOD_MODEL_SANTUY").unwrap_or_else(|_| "gemini/gemini-2.5-flash-lite".to_string());
 
+    let weather_context = match weather_info {
+        Some(w) => format!("IMPORTANT: Current weather is {}. Use this exact string in the 'weather' field and provide tips based on this weather condition.", w),
+        None => "Provide a reasonable weather estimate for the area in the 'weather' field.".to_string(),
+    };
+
     let system_prompt = format!("You are an AI travel assistant. Generate a local itinerary or route based on the user's prompt. 
 Respond in the language specified: {}.
+{}.
 Respond ONLY in valid JSON format matching this exact structure:
 {{
   \"title\": \"Catchy title for the route\",
@@ -104,6 +111,7 @@ Respond ONLY in valid JSON format matching this exact structure:
         {{
           \"name\": \"Another place\",
           \"address\": \"Nearby address\",
+          \"description\": \"Description for candidate...\",
           \"latitude\": -6.89,
           \"longitude\": 107.61,
           \"rating\": 4.5,
@@ -115,15 +123,14 @@ Respond ONLY in valid JSON format matching this exact structure:
     }}
   ]
 }}
-If the user provides social links or harvested data, include the exact `source_platform`, `thumbnail_url`, and `video_url` in the specific route step if matching. 
-Provide 2-3 candidates (alternative locations) for each main step. Provide around 3-5 major steps.", lang);
+Provide 2-3 candidates (alternative locations) for each main step. Provide around 3-5 major steps.", lang, weather_context);
 
-    let user_content = format!("Prompt: {}\nLinks: {}", prompt, links.as_deref().unwrap_or(""));
+    let user_content = format!("Prompt: {}", prompt);
 
     let req_body = ChatRequest {
         model,
         messages: vec![
-            ChatMessage { role: "system".to_string(), content: system_prompt.to_string() },
+            ChatMessage { role: "system".to_string(), content: system_prompt },
             ChatMessage { role: "user".to_string(), content: user_content },
         ],
         response_format: Some(ResponseFormat { format_type: "json_object".to_string() }),

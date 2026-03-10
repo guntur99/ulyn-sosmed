@@ -519,6 +519,7 @@
             <input type="hidden" name="vibe_trait" id="vibeTraitInput" value="">
             <input type="hidden" name="lat" id="latInput">
             <input type="hidden" name="lng" id="lngInput">
+            <input type="hidden" name="lang" id="langInput" value="id">
 
             <div id="socialLinksContainer" class="px-6 flex flex-wrap gap-2 pb-2"></div>
 
@@ -1191,6 +1192,11 @@
             localStorage.removeItem('ulyn_lang'); // Cleanup old key
             document.documentElement.lang = lang;
             document.documentElement.dir = (lang === 'ar' ? 'rtl' : 'ltr');
+
+            // Update hidden form input
+            const langInp = document.getElementById('langInput');
+            if (langInp) langInp.value = lang;
+
             var t = TRANSLATIONS[lang] || TRANSLATIONS.id;
 
             // Translate generic elements
@@ -1354,6 +1360,10 @@
                 document.getElementById('vibeInput').value = selected.value === 'Gen-Z' ? 'Chill Gen-Z' : selected.value;
                 document.getElementById('vibeBtn').innerHTML = `<i class="${iconClass}"></i> ${badgeText} <i
         class="fas fa-chevron-down text-slate-400 text-[10px] ml-1"></i>`;
+
+                // Save to localStorage for persistence across pages (like route.html)
+                localStorage.setItem('vibe', selected.value === 'Gen-Z' ? 'Chill Gen-Z' : selected.value);
+                localStorage.setItem('vibe_trait', document.getElementById('vibeTraitInput').value || '');
 
                 closeVibeModal();
             }
