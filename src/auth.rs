@@ -82,7 +82,7 @@ pub async fn google_login() -> impl IntoResponse {
 /// GET /auth/google/callback → exchange code for token, set session cookie
 pub async fn google_callback(
     Query(params): Query<CallbackQuery>,
-    _state: State<AppState>,
+    State(state): State<AppState>,
 ) -> impl IntoResponse {
     if let Some(err) = &params.error {
         tracing::warn!("Google OAuth error: {}", err);
@@ -154,6 +154,15 @@ pub async fn google_callback(
     };
 
     tracing::info!("Google OAuth login: {} ({})", user.name, user.email);
+
+    // Save/Update user in DB
+    let _ = crate::db::upsert_user(
+        &state.db,
+        &user.email,
+        &user.name,
+        user.picture.as_deref(),
+        &user.id
+    ).await;
 
     // Set session cookie (HttpOnly, SameSite=Lax, 7 days)
     let session_val = encode_session(&user);

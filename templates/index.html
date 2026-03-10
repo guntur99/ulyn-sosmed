@@ -301,6 +301,13 @@
                     <div class="px-4 py-3 border-b border-slate-50 dark:border-slate-800">
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logged in as</p>
                         <p class="text-xs font-bold text-slate-900 dark:text-white truncate">{{ u.name }}</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span
+                                class="text-[9px] font-black bg-indigo-500 text-white px-1.5 py-0.5 rounded-md uppercase tracking-tighter">{{
+                                u.tier }}</span>
+                            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">🪙 {{ u.credits }}
+                                Credits</span>
+                        </div>
                     </div>
                     <a href="/auth/logout"
                         class="flex items-center gap-3 px-4 py-3 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-500 transition-colors text-sm font-bold">
@@ -415,7 +422,7 @@
                     </button>
                     <button type="button" id="vibeBtn" onclick="openVibeModal()"
                         class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-full text-xs font-black text-slate-700 dark:text-white hover:bg-slate-50 transition-colors">
-                        <i class="fas fa-bolt text-rose-500"></i> Gen-Z(W) <i
+                        <i class="fas fa-bolt text-rose-500"></i> Chill Gen-Z <i
                             class="fas fa-chevron-down text-slate-400 text-[10px] ml-1"></i>
                     </button>
                     <button type="button" onclick="openQuotaModal()"
@@ -462,7 +469,7 @@
                 </div>
             </div>
 
-            <input type="hidden" name="vibe" id="vibeInput" value="Gen-Z(W)">
+            <input type="hidden" name="vibe" id="vibeInput" value="Chill Gen-Z">
             <input type="hidden" name="vibe_trait" id="vibeTraitInput" value="">
             <input type="hidden" name="lat" id="latInput">
             <input type="hidden" name="lng" id="lngInput">
@@ -561,7 +568,8 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 md:px-0">
-                <!-- Basic Pass -->
+                {% match user %}
+                {% when Some with (u) %}
                 <button hx-post="/api/checkout" hx-vals='{"tier": "basic_pass", "amount": 15000}'
                     class="text-left bg-white/70 dark:bg-slate-800/60 backdrop-blur-md p-8 rounded-[32px] border border-white dark:border-slate-700 shadow-xl shadow-indigo-900/5 dark:shadow-none hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-400 transition-all duration-300 relative overflow-hidden group">
                     <div
@@ -580,8 +588,29 @@
                         <span data-i18n="topupBtn">Topup Sekarang</span> <i class="fas fa-arrow-right"></i>
                     </div>
                 </button>
+                {% when None %}
+                <button onclick="window.location.href='/auth/google'"
+                    class="text-left bg-white/70 dark:bg-slate-800/60 backdrop-blur-md p-8 rounded-[32px] border border-white dark:border-slate-700 shadow-xl shadow-indigo-900/5 dark:shadow-none hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-400 transition-all duration-300 relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-bl-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-colors">
+                    </div>
+                    <div
+                        class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-500 rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10 shadow-sm border border-indigo-100 dark:border-indigo-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <h3 class="font-black text-slate-900 dark:text-white text-2xl mb-1">Basic Pass</h3>
+                    <p class="text-xl font-bold text-indigo-500 dark:text-indigo-400 mb-4">Rp 15.000</p>
+                    <p data-i18n="basicDesc" class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-6">Cocok
+                        untuk kebutuhan personal sesekali. Dapatkan 10x Generate rute &amp; itinerary keren.</p>
+                    <div
+                        class="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-500 transition-colors flex items-center gap-2">
+                        <span data-i18n="topupBtn">Topup Sekarang</span> <i class="fas fa-arrow-right"></i>
+                    </div>
+                </button>
+                {% endmatch %}
 
-                <!-- Pro Pass -->
+                {% match user %}
+                {% when Some with (u) %}
                 <button hx-post="/api/checkout" hx-vals='{"tier": "pro_pass", "amount": 49000}'
                     class="text-left bg-gradient-to-br from-rose-500 to-amber-500 p-8 rounded-[32px] border border-white/20 shadow-xl shadow-rose-900/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-rose-500/30 transition-all duration-300 relative overflow-hidden group">
                     <div
@@ -601,6 +630,27 @@
                         <span data-i18n="joinProBtn">Join Pro Sekarang</span> <i class="fas fa-arrow-right"></i>
                     </div>
                 </button>
+                {% when None %}
+                <button onclick="window.location.href='/auth/google'"
+                    class="text-left bg-gradient-to-br from-rose-500 to-amber-500 p-8 rounded-[32px] border border-white/20 shadow-xl shadow-rose-900/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-rose-500/30 transition-all duration-300 relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-4 bg-white/20 backdrop-blur-sm text-white text-[10px] font-black px-4 py-2 rounded-b-xl uppercase tracking-widest border-x border-b border-white/20">
+                        <span data-i18n="bestValue">Best Value</span>
+                    </div>
+
+                    <div
+                        class="w-16 h-16 bg-white/20 backdrop-blur-md text-white rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10 shadow-sm border border-white/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="font-black text-white text-2xl mb-1">Pro Pass</h3>
+                    <p class="text-xl font-bold text-rose-100 mb-4">Rp 49.000</p>
+                    <p data-i18n="proDesc" class="text-sm text-rose-50/90 font-medium mb-6">Akses tanpa batas untuk para
+                        traveler. Bebas limit rute dan prioritas AI antrian.</p>
+                    <div class="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                        <span data-i18n="joinProBtn">Join Pro Sekarang</span> <i class="fas fa-arrow-right"></i>
+                    </div>
+                </button>
+                {% endmatch %}
             </div>
 
             <p
@@ -792,7 +842,8 @@
                         <p data-i18n="statGenerateRoute"
                             class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">
                             Generate Rute</p>
-                        <p class="text-4xl font-black text-slate-900 dark:text-white">5</p>
+                        <p class="text-4xl font-black text-slate-900 dark:text-white">{{ quota.route_limit -
+                            quota.route_used }}</p>
                     </div>
                     <div class="w-px h-12 bg-slate-200 dark:bg-slate-700"></div>
                     <div class="text-center">
@@ -815,15 +866,15 @@
                         class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col justify-center items-center">
                         <p data-i18n="benefitViralCaption"
                             class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">Viral Caption</p>
-                        <p class="text-xl font-black text-slate-900 dark:text-white">10<span
-                                class="text-sm font-bold text-slate-400">x</span></p>
+                        <p class="text-xl font-black text-slate-900 dark:text-white">{{ quota.caption_limit -
+                            quota.caption_used }}<span class="text-sm font-bold text-slate-400">x</span></p>
                     </div>
                     <div
                         class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col justify-center items-center">
                         <p data-i18n="benefitVisualReceipt"
                             class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">Visual Receipt</p>
-                        <p class="text-xl font-black text-slate-900 dark:text-white">20<span
-                                class="text-sm font-bold text-slate-400">x</span></p>
+                        <p class="text-xl font-black text-slate-900 dark:text-white">{{ quota.receipt_limit -
+                            quota.receipt_used }}<span class="text-sm font-bold text-slate-400">x</span></p>
                     </div>
                 </div>
             </div>
@@ -864,124 +915,173 @@
 
             <!-- Vibe Options -->
             <div class="p-6 overflow-y-auto custom-scrollbar flex-1 relative">
-                <div class="grid grid-cols-1 gap-3" id="vibeContainer">
+                <div class="grid grid-cols-2 gap-4" id="vibeContainer">
                     <!-- Gen-Z -->
-                    <label class="cursor-pointer group">
+                    <label class="cursor-pointer group relative">
                         <input type="radio" name="vibe_option" value="Gen-Z" class="peer sr-only" checked
                             onchange="updateSelectedVibe()">
                         <div
-                            class="p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-violet-200 hover:bg-violet-50/50 dark:hover:border-violet-900/50 dark:hover:bg-violet-900/10 transition-all peer-checked:border-violet-500 peer-checked:bg-violet-50 dark:peer-checked:bg-violet-900/20 peer-checked:shadow-sm relative overflow-hidden">
+                            class="aspect-[4/5] rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 overflow-hidden relative transition-all peer-checked:border-violet-500 peer-checked:ring-4 peer-checked:ring-violet-500/20 group-hover:scale-[1.02] active:scale-95">
+                            <img src="/static/moods/mood_genz_chill.png"
+                                class="absolute inset-0 w-full h-full object-cover">
                             <div
-                                class="absolute top-4 right-4 text-violet-500 opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
-                                <i class="fas fa-check-circle text-xl"></i>
+                                class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10">
                             </div>
-                            <div class="flex items-start gap-4">
+                            <div
+                                class="absolute top-4 right-4 z-20 text-white opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-2xl"></i>
+                            </div>
+                            <div class="absolute bottom-6 left-6 right-6 z-20">
                                 <div
-                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                                    class="w-10 h-10 rounded-xl bg-violet-500 text-white flex items-center justify-center mb-3 shadow-lg">
                                     <i class="fas fa-bolt"></i>
                                 </div>
-                                <div>
-                                    <h4 data-i18n="vibeGenZTitle"
-                                        class="font-bold text-slate-800 dark:text-white text-base mb-1">Gen-Z Santuy (W)
-                                    </h4>
-                                    <p data-i18n="vibeGenZDesc"
-                                        class="text-[11px] text-slate-500 font-medium leading-relaxed">Bahasa gaul,
-                                        asik,
-                                        banyak slang kekinian anak Jaksel/sosmed.</p>
-                                    <div data-i18n="vibeDefault"
-                                        class="mt-2 text-[10px] font-bold text-violet-600 bg-violet-100 dark:bg-violet-900/30 dark:text-violet-300 px-2.5 py-1 rounded-md inline-block">
-                                        Default</div>
-                                </div>
+                                <h4 data-i18n="vibeGenZTitle" class="font-black text-white text-sm mb-1">Gen-Z Santuy
+                                </h4>
+                                <p data-i18n="vibeGenZDesc" class="text-[10px] text-white/70 font-medium leading-tight">
+                                    Bahasa gaul & asik.</p>
                             </div>
                         </div>
                     </label>
 
-                    <!-- Professional Guide -->
-                    <label class="cursor-pointer group">
-                        <input type="radio" name="vibe_option" value="Pro Guide" class="peer sr-only"
-                            onchange="updateSelectedVibe()">
-                        <div
-                            class="p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-emerald-200 hover:bg-emerald-50/50 dark:hover:border-emerald-900/50 dark:hover:bg-emerald-900/10 transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-900/20 peer-checked:shadow-sm relative overflow-hidden">
-                            <div
-                                class="absolute top-4 right-4 text-emerald-500 opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
-                                <i class="fas fa-check-circle text-xl"></i>
-                            </div>
-                            <div class="flex items-start gap-4">
-                                <div
-                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-map-signs"></i>
-                                </div>
-                                <div>
-                                    <h4 data-i18n="vibeProTitle"
-                                        class="font-bold text-slate-800 dark:text-white text-base mb-1">Local Expert
-                                        Guide</h4>
-                                    <p data-i18n="vibeProDesc"
-                                        class="text-[11px] text-slate-500 font-medium leading-relaxed">Edukasi sejarah
-                                        tempat, super informatif dan jelas terstruktur.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </label>
-
-                    <!-- Puitis/Senja -->
-                    <label class="cursor-pointer group">
-                        <input type="radio" name="vibe_option" value="Puitis" class="peer sr-only"
-                            onchange="updateSelectedVibe()">
-                        <div
-                            class="p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-rose-200 hover:bg-rose-50/50 dark:hover:border-rose-900/50 dark:hover:bg-rose-900/10 transition-all peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-900/20 peer-checked:shadow-sm relative overflow-hidden">
-                            <div
-                                class="absolute top-4 right-4 text-rose-500 opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
-                                <i class="fas fa-check-circle text-xl"></i>
-                            </div>
-                            <div class="flex items-start gap-4">
-                                <div
-                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-orange-500 text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-coffee"></i>
-                                </div>
-                                <div>
-                                    <h4 data-i18n="vibeIndieTitle"
-                                        class="font-bold text-slate-800 dark:text-white text-base mb-1">Anak Indie Senja
-                                    </h4>
-                                    <p data-i18n="vibeIndieDesc"
-                                        class="text-[11px] text-slate-500 font-medium leading-relaxed">Sangat estetik,
-                                        bahasanya puitis, cocok buat healing sendu.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </label>
-
-                    <!-- Custom Prompt -->
+                    <!-- Healing & Nature -->
                     <label class="cursor-pointer group relative">
-                        <input type="radio" name="vibe_option" value="Custom" class="peer sr-only"
+                        <input type="radio" name="vibe_option" value="Healing" class="peer sr-only"
                             onchange="updateSelectedVibe()">
                         <div
-                            class="p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-amber-200 hover:bg-amber-50/50 dark:hover:border-amber-900/50 dark:hover:bg-amber-900/10 transition-all peer-checked:border-amber-500 peer-checked:bg-amber-50 dark:peer-checked:bg-amber-900/20 peer-checked:shadow-sm relative overflow-hidden">
+                            class="aspect-[4/5] rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 overflow-hidden relative transition-all peer-checked:border-emerald-500 peer-checked:ring-4 peer-checked:ring-emerald-500/20 group-hover:scale-[1.02] active:scale-95">
+                            <img src="/static/moods/mood_healing_nature_1773098438008.png"
+                                class="absolute inset-0 w-full h-full object-cover">
                             <div
-                                class="absolute top-4 right-4 text-amber-500 opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
-                                <i class="fas fa-check-circle text-xl"></i>
+                                class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10">
                             </div>
-                            <div class="flex items-start gap-4">
+                            <div
+                                class="absolute top-4 right-4 z-20 text-white opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-2xl"></i>
+                            </div>
+                            <div class="absolute bottom-6 left-6 right-6 z-20">
                                 <div
-                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-magic"></i>
+                                    class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center mb-3 shadow-lg">
+                                    <i class="fas fa-leaf"></i>
                                 </div>
-                                <div class="flex-1">
-                                    <h4 data-i18n="vibeCustomTitle"
-                                        class="font-bold text-slate-800 dark:text-white text-base mb-1">Bikin Persona
-                                        Sendiri</h4>
-                                    <p data-i18n="vibeCustomDesc"
-                                        class="text-[11px] text-slate-500 font-medium leading-relaxed">Describe AI mau
-                                        disuruh jadi siapa. (Misal: Jadi Kakek Galak)</p>
+                                <h4 data-i18n="vibeHealingTitle" class="font-black text-white text-sm mb-1">Healing
+                                    Nature</h4>
+                                <p data-i18n="vibeHealingDesc"
+                                    class="text-[10px] text-white/70 font-medium leading-tight">Damai & Segar.</p>
+                            </div>
+                        </div>
+                    </label>
 
-                                    <div
-                                        class="mt-3 overflow-hidden transition-all duration-300 max-h-0 opacity-0 peer-checked:max-h-[100px] peer-checked:opacity-100 peer-checked:mt-3">
-                                        <input type="text" id="customVibeInput"
-                                            data-i18n-placeholder="vibeCustomPlaceholder"
-                                            placeholder="Ketik persona di sini..."
-                                            class="w-full bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 transition-colors"
-                                            onkeyup="document.getElementById('vibeTraitInput').value = this.value">
-                                    </div>
+                    <!-- Modern City -->
+                    <label class="cursor-pointer group relative">
+                        <input type="radio" name="vibe_option" value="Modern" class="peer sr-only"
+                            onchange="updateSelectedVibe()">
+                        <div
+                            class="aspect-[4/5] rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 overflow-hidden relative transition-all peer-checked:border-blue-500 peer-checked:ring-4 peer-checked:ring-blue-500/20 group-hover:scale-[1.02] active:scale-95">
+                            <img src="/static/moods/mood_city_boy_modern_tokyo_1773098453659.png"
+                                class="absolute inset-0 w-full h-full object-cover">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10">
+                            </div>
+                            <div
+                                class="absolute top-4 right-4 z-20 text-white opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-2xl"></i>
+                            </div>
+                            <div class="absolute bottom-6 left-6 right-6 z-20">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center mb-3 shadow-lg">
+                                    <i class="fas fa-city"></i>
                                 </div>
+                                <h4 data-i18n="vibeModernTitle" class="font-black text-white text-sm mb-1">Modern City
+                                </h4>
+                                <p data-i18n="vibeModernDesc"
+                                    class="text-[10px] text-white/70 font-medium leading-tight">Gaya urban & trendi.</p>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Foodie Trip -->
+                    <label class="cursor-pointer group relative">
+                        <input type="radio" name="vibe_option" value="Foodie" class="peer sr-only"
+                            onchange="updateSelectedVibe()">
+                        <div
+                            class="aspect-[4/5] rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 overflow-hidden relative transition-all peer-checked:border-orange-500 peer-checked:ring-4 peer-checked:ring-orange-500/20 group-hover:scale-[1.02] active:scale-95">
+                            <img src="/static/moods/mood_foodie_culinary_1773098466980.png"
+                                class="absolute inset-0 w-full h-full object-cover">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10">
+                            </div>
+                            <div
+                                class="absolute top-4 right-4 z-20 text-white opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-2xl"></i>
+                            </div>
+                            <div class="absolute bottom-6 left-6 right-6 z-20">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center mb-3 shadow-lg">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <h4 data-i18n="vibeFoodieTitle" class="font-black text-white text-sm mb-1">Foodie
+                                    Culinary</h4>
+                                <p data-i18n="vibeFoodieDesc"
+                                    class="text-[10px] text-white/70 font-medium leading-tight">Berburu kuliner.</p>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Aesthetic -->
+                    <label class="cursor-pointer group relative">
+                        <input type="radio" name="vibe_option" value="Aesthetic" class="peer sr-only"
+                            onchange="updateSelectedVibe()">
+                        <div
+                            class="aspect-[4/5] rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 overflow-hidden relative transition-all peer-checked:border-rose-500 peer-checked:ring-4 peer-checked:ring-rose-500/20 group-hover:scale-[1.02] active:scale-95">
+                            <img src="/static/moods/mood_aesthetic_instagrammable_1773098482886.png"
+                                class="absolute inset-0 w-full h-full object-cover">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10">
+                            </div>
+                            <div
+                                class="absolute top-4 right-4 z-20 text-white opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-2xl"></i>
+                            </div>
+                            <div class="absolute bottom-6 left-6 right-6 z-20">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center mb-3 shadow-lg">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <h4 data-i18n="vibeAestheticTitle" class="font-black text-white text-sm mb-1">
+                                    Insta-Worthy</h4>
+                                <p data-i18n="vibeAestheticDesc"
+                                    class="text-[10px] text-white/70 font-medium leading-tight">Spot foto estetik.</p>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Local Expert -->
+                    <label class="cursor-pointer group relative">
+                        <input type="radio" name="vibe_option" value="Expert" class="peer sr-only"
+                            onchange="updateSelectedVibe()">
+                        <div
+                            class="aspect-[4/5] rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 overflow-hidden relative transition-all peer-checked:border-amber-500 peer-checked:ring-4 peer-checked:ring-amber-500/20 group-hover:scale-[1.02] active:scale-95">
+                            <img src="/static/moods/mood_local_expert.png"
+                                class="absolute inset-0 w-full h-full object-cover">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10">
+                            </div>
+                            <div
+                                class="absolute top-4 right-4 z-20 text-white opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300">
+                                <i class="fas fa-check-circle text-2xl"></i>
+                            </div>
+                            <div class="absolute bottom-6 left-6 right-6 z-20">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center mb-3 shadow-lg">
+                                    <i class="fas fa-chess-knight"></i>
+                                </div>
+                                <h4 data-i18n="vibeExpertTitle" class="font-black text-white text-sm mb-1">Local Expert
+                                </h4>
+                                <p data-i18n="vibeExpertDesc"
+                                    class="text-[10px] text-white/70 font-medium leading-tight">Insight sejarah & tips
+                                    lokal.
+                                </p>
                             </div>
                         </div>
                     </label>
@@ -1005,8 +1105,8 @@
     <script>
         // ── i18n Language System ─────────────────────────────────────────────
         const TRANSLATIONS = {
-            id: { historyTitle: 'Riwayat Rute Kamu', historySub: 'Recent Itineraries', historyNavTitle: 'Riwayat Rute', historyNavSub: 'Recent Itineraries', historyEmpty: 'Belum ada riwayat', historyStops: 'Stops', routeBack: 'Kembali', exploreFeatures: 'EKSPLOR FITUR', featuresSub: 'Cuaca, Budget & Rute AI...', socialLink: 'SOCIAL LINK', locationLocked: 'LOKASI TERKUNCI', buildRoute: 'Buat Rute AI', promptPlaceholder: 'Cari cafe di Bandung yang asik buat nugas...', categoryWalk: 'Jalan-jalan', categoryEat: 'Jajan', categoryShop: 'Shopping', categoryHangout: 'Nongkrong', categoryHeal: 'Healing', upgradeKuota: 'UPGRADE KUOTA', pilihPaket: 'Pilih Paket Premium', basicDesc: 'Cocok untuk kebutuhan personal sesekali. Dapatkan 10x Generate rute & itinerary keren.', topupBtn: 'Topup Sekarang', bestValue: 'Best Value', proDesc: 'Akses tanpa batas untuk para traveler. Bebas limit rute dan prioritas AI antrian.', joinProBtn: 'Join Pro Sekarang', securePayment: 'Pembayaran Aman oleh Mayar.id', modalSocialTitle: 'Paste Social Links', socialPlaceholder: 'Paste link video di sini...', addLinkBtnText: 'Tambah Link Lain', saveLinksBtnText: 'Simpan & Lanjutkan', modalFeaturesTitle: 'Eksplor Fitur AI Kami', feature1Title: 'Buat Rute by Prompting', feature1Desc: 'Tulis aja maunya apa, AI langsung racikin rute jalan-jalannya lengkap dengan tempat hits!', feature2Title: 'Voice Prompt', feature2Desc: 'Lagi males ngetik? Ngomong aja dan AI bakal terjemahin suaramu jadi rute seru secara real-time.', feature3Title: 'Ekstrak dari Social Link', feature3Desc: 'Ada video viral di TikTok atau IG? Paste link-nya, biar AI ekstrak lokasi-lokasinya otomatis.', feature4Title: 'Bikin Viral Caption', feature4Desc: 'Dapetin saran caption ala selebgram buat disebarin waktu pamerin rute perjalananmu.', feature5Title: 'Visual Receipt', feature5Desc: 'Lihat breakdown budget otomatis buat rute, jajan, atau tiket wisata versi receipt estetik!', feature6Title: 'Persona Pemandu', feature6Desc: 'Bisa pilih AI mau ngomong kayak Gen-Z santuy, pro tour guide, atau sok puitis ala senja.', closeFeaturesBtnText: 'Tutup Explorasi', modalQuotaLabel: 'Sisa Kuota Utama Kamu', statGenerateRoute: 'Generate Rute', statSocialLinks: 'Social Links / Rute', benefitLabel: 'Benefit Tambahan', benefitViralCaption: 'Viral Caption', benefitVisualReceipt: 'Visual Receipt', buyPassBtnText: 'Beli Travel Pass', quotaOkBtnText: 'Oke, Siap!', modalVibeTitle: 'Pilih Persona Pemandu', modalVibeSub: 'Pilih gaya bahasa AI buat nemenin jalan-jalan kamu.', vibeGenZTitle: 'Chill Gen-Z', vibeGenZDesc: 'Bahasa gaul, asik, banyak slang kekinian anak Jaksel/sosmed.', vibeDefault: 'Default', vibeProTitle: 'Local Expert Guide', vibeProDesc: 'Edukasi sejarah tempat, super informatif dan jelas terstruktur.', vibeIndieTitle: 'Anak Indie Senja', vibeIndieDesc: 'Sangat estetik, bahasanya puitis, cocok buat healing sendu.', vibeCustomTitle: 'Bikin Persona Sendiri', vibeCustomDesc: 'Describe AI mau disuruh jadi siapa. (Misal: Jadi Kakek Galak)', vibeCustomPlaceholder: 'Ketik persona di sini...', vibeCancelBtn: 'Batal', vibeConfirmBtn: 'Pilih Persona', socialRouteTitle: 'Rute dari Social Media', socialRouteDesc: 'Tempel link Reels atau TikTok untuk harvesting destinasi otomatis.', socialQuotaLabel: 'QUOTA', inputAddLinkBtn: 'Input / Tambah Link', textMode: 'TEKS PROMPT', guestWarning: 'Kamu login sebagai Guest.', loginAction: 'Login agar riwayat rute tidak hilang.' },
-            en: { historyTitle: 'Your Route History', historySub: 'Recent Itineraries', historyNavTitle: 'Route History', historyNavSub: 'Recent Routes', historyEmpty: 'No history yet', historyStops: 'Stops', routeBack: 'Back', exploreFeatures: 'EXPLORE FEATURES', featuresSub: 'Weather, Budget & AI Route...', socialLink: 'SOCIAL LINK', locationLocked: 'LOCATION LOCKED', buildRoute: 'Build AI Route', promptPlaceholder: 'Find a cozy cafe in Bandung for studying...', categoryWalk: 'Sightseeing', categoryEat: 'Food', categoryShop: 'Shopping', categoryHangout: 'Hangout', categoryHeal: 'Healing', upgradeKuota: 'UPGRADE QUOTA', pilihPaket: 'Choose Premium Plan', basicDesc: 'Perfect for occasional personal use. Get 10x route & itinerary generation.', topupBtn: 'Get Basic Now', bestValue: 'Best Value', proDesc: 'Unlimited access for travelers. No route limits and priority AI queue.', joinProBtn: 'Join Pro Now', securePayment: 'Secure Payment by Mayar.id', modalSocialTitle: 'Paste Social Links', socialPlaceholder: 'Paste video link here...', addLinkBtnText: 'Add Another Link', saveLinksBtnText: 'Save & Continue', modalFeaturesTitle: 'Explore Our AI Features', feature1Title: 'Build Route by Prompting', feature1Desc: 'Just write what you want, and AI will whip up a full sightseeing route complete with trending spots!', feature2Title: 'Voice Prompt', feature2Desc: 'Too lazy to type? Just speak and AI will translate your voice into an exciting route in real-time.', feature3Title: 'Extract from Social Link', feature3Desc: 'Found a viral video on TikTok or IG? Paste the link, and let AI automatically extract the locations.', feature4Title: 'Create Viral Captions', feature4Desc: 'Get influencer-style caption suggestions to share when showing off your travel route.', feature5Title: 'Visual Receipt', feature5Desc: 'View an automatic budget breakdown for your route, snacks, or tickets in an aesthetic receipt style!', feature6Title: 'Guide Persona', feature6Desc: 'Choose if you want the AI to talk like a relaxed Gen-Z, a professional tour guide, or a poetic sunset-lover.', closeFeaturesBtnText: 'Close Exploration', modalQuotaLabel: 'Your Main Quota Remaining', statGenerateRoute: 'Generate Route', statSocialLinks: 'Social Links / Route', benefitLabel: 'Additional Benefits', benefitViralCaption: 'Viral Caption', benefitVisualReceipt: 'Viral Caption', buyPassBtnText: 'Buy Travel Pass', quotaOkBtnText: 'Okay, Ready!', modalVibeTitle: 'Choose Guide Persona', modalVibeSub: "Choose the AI's language style to accompany your travels.", vibeGenZTitle: 'Chill Gen-Z', vibeGenZDesc: 'Slangy, cool, lots of trendy social media slang.', vibeDefault: 'Default', vibeProTitle: 'Local Expert Guide', vibeProDesc: 'Local history education, super informative and clearly structured.', vibeIndieTitle: 'Sunset Indie', vibeIndieDesc: 'Very aesthetic, poetic language, perfect for moody healing.', vibeCustomTitle: 'Create Your Own Persona', vibeCustomDesc: 'Describe who you want the AI to be. (e.g., Grumpy Grandpa)', vibeCustomPlaceholder: 'Type persona here...', vibeCancelBtn: 'Cancel', vibeConfirmBtn: 'Choose Persona', socialRouteTitle: 'Route from Social Media', socialRouteDesc: 'Paste Reels or TikTok links for automatic destination harvesting.', socialQuotaLabel: 'QUOTA', inputAddLinkBtn: 'Input / Add Link', textMode: 'TEXT PROMPT', guestWarning: 'You are logged in as a Guest.', loginAction: 'Login so your route history is not lost.' },
+            id: { historyTitle: 'Riwayat Rute Kamu', historySub: 'Recent Itineraries', historyNavTitle: 'Riwayat Rute', historyNavSub: 'Recent Itineraries', historyEmpty: 'Belum ada riwayat', historyStops: 'Stops', routeBack: 'Kembali', exploreFeatures: 'EKSPLOR FITUR', featuresSub: 'Cuaca, Budget & Rute AI...', socialLink: 'SOCIAL LINK', locationLocked: 'LOKASI TERKUNCI', buildRoute: 'Buat Rute AI', promptPlaceholder: 'Cari cafe di Bandung yang asik buat nugas...', categoryWalk: 'Jalan-jalan', categoryEat: 'Jajan', categoryShop: 'Shopping', categoryHangout: 'Nongkrong', categoryHeal: 'Healing', upgradeKuota: 'UPGRADE KUOTA', pilihPaket: 'Pilih Paket Premium', basicDesc: 'Cocok untuk kebutuhan personal sesekali. Dapatkan 10x Generate rute & itinerary keren.', topupBtn: 'Topup Sekarang', bestValue: 'Best Value', proDesc: 'Akses tanpa batas untuk para traveler. Bebas limit rute dan prioritas AI antrian.', joinProBtn: 'Join Pro Sekarang', securePayment: 'Pembayaran Aman oleh Mayar.id', modalSocialTitle: 'Paste Social Links', socialPlaceholder: 'Paste link video di sini...', addLinkBtnText: 'Tambah Link Lain', saveLinksBtnText: 'Simpan & Lanjutkan', modalFeaturesTitle: 'Eksplor Fitur AI Kami', feature1Title: 'Buat Rute by Prompting', feature1Desc: 'Tulis aja maunya apa, AI langsung racikin rute jalan-jalannya lengkap dengan tempat hits!', feature2Title: 'Voice Prompt', feature2Desc: 'Lagi males ngetik? Ngomong aja dan AI bakal terjemahin suaramu jadi rute seru secara real-time.', feature3Title: 'Ekstrak dari Social Link', feature3Desc: 'Ada video viral di TikTok atau IG? Paste link-nya, biar AI ekstrak lokasi-lokasinya otomatis.', feature4Title: 'Bikin Viral Caption', feature4Desc: 'Dapetin saran caption ala selebgram buat disebarin waktu pamerin rute perjalananmu.', feature5Title: 'Visual Receipt', feature5Desc: 'Lihat breakdown budget otomatis buat rute, jajan, atau tiket wisata versi receipt estetik!', feature6Title: 'Persona Pemandu', feature6Desc: 'Bisa pilih AI mau ngomong kayak Gen-Z santuy, pro tour guide, atau sok puitis ala senja.', closeFeaturesBtnText: 'Tutup Explorasi', modalQuotaLabel: 'Sisa Kuota Utama Kamu', statGenerateRoute: 'Generate Rute', statSocialLinks: 'Social Links / Rute', benefitLabel: 'Benefit Tambahan', benefitViralCaption: 'Viral Caption', benefitVisualReceipt: 'Visual Receipt', buyPassBtnText: 'Beli Travel Pass', quotaOkBtnText: 'Oke, Siap!', modalVibeTitle: 'Pilih Persona Pemandu', modalVibeSub: 'Pilih gaya bahasa AI buat nemenin jalan-jalan kamu.', vibeGenZTitle: 'Chill Gen-Z', vibeGenZDesc: 'Bahasa gaul, asik, banyak slang kekinian.', vibeHealingTitle: 'Healing Nature', vibeHealingDesc: 'Damai & Segar.', vibeModernTitle: 'Modern City', vibeModernDesc: 'Urban & Trendi.', vibeFoodieTitle: 'Foodie Culinary', vibeFoodieDesc: 'Berburu kuliner.', vibeAestheticTitle: 'Insta-Worthy', vibeAestheticDesc: 'Spot foto estetik.', vibeDefault: 'Default', vibeProTitle: 'Local Expert Guide', vibeProDesc: 'Edukasi sejarah tempat, super informatif.', vibeIndieTitle: 'Anak Indie Senja', vibeIndieDesc: 'Sangat estetik, bahasanya puitis.', vibeExpertTitle: 'Local Expert', vibeExpertDesc: 'Insight sejarah & tips lokal.', vibeCancelBtn: 'Batal', vibeConfirmBtn: 'Pilih Persona', socialRouteTitle: 'Rute dari Social Media', socialRouteDesc: 'Tempel link Reels atau TikTok.', socialQuotaLabel: 'QUOTA', inputAddLinkBtn: 'Input / Tambah Link', textMode: 'TEKS PROMPT', guestWarning: 'Kamu login sebagai Guest.', loginAction: 'Login agar riwayat rute tidak hilang.' },
+            en: { historyTitle: 'Your Route History', historySub: 'Recent Itineraries', historyNavTitle: 'Route History', historyNavSub: 'Recent Routes', historyEmpty: 'No history yet', historyStops: 'Stops', routeBack: 'Back', exploreFeatures: 'EXPLORE FEATURES', featuresSub: 'Weather, Budget & AI Route...', socialLink: 'SOCIAL LINK', locationLocked: 'LOCATION LOCKED', buildRoute: 'Build AI Route', promptPlaceholder: 'Find a cozy cafe in Bandung for studying...', categoryWalk: 'Sightseeing', categoryEat: 'Food', categoryShop: 'Shopping', categoryHangout: 'Hangout', categoryHeal: 'Healing', upgradeKuota: 'UPGRADE QUOTA', pilihPaket: 'Choose Premium Plan', basicDesc: 'Perfect for occasional personal use. Get 10x route & itinerary generation.', topupBtn: 'Get Basic Now', bestValue: 'Best Value', proDesc: 'Unlimited access for travelers. No route limits and priority AI queue.', joinProBtn: 'Join Pro Now', securePayment: 'Secure Payment by Mayar.id', modalSocialTitle: 'Paste Social Links', socialPlaceholder: 'Paste video link here...', addLinkBtnText: 'Add Another Link', saveLinksBtnText: 'Save & Continue', modalFeaturesTitle: 'Explore Our AI Features', feature1Title: 'Build Route by Prompting', feature1Desc: 'Just write what you want, and AI will whip up a full route!', feature2Title: 'Voice Prompt', feature2Desc: 'Too lazy to type? Just speak!', feature3Title: 'Extract from Social Link', feature3Desc: 'Paste the link, and let AI automatically extract the locations.', feature4Title: 'Create Viral Captions', feature4Desc: 'Get influencer-style caption suggestions.', feature5Title: 'Visual Receipt', feature5Desc: 'View an automatic budget breakdown in an aesthetic receipt style!', feature6Title: 'Guide Persona', feature6Desc: 'Choose how the AI talks to you.', closeFeaturesBtnText: 'Close Exploration', modalQuotaLabel: 'Your Main Quota Remaining', statGenerateRoute: 'Generate Route', statSocialLinks: 'Social Links / Route', benefitLabel: 'Additional Benefits', benefitViralCaption: 'Viral Caption', benefitVisualReceipt: 'Viral Caption', buyPassBtnText: 'Buy Travel Pass', quotaOkBtnText: 'Okay, Ready!', modalVibeTitle: 'Choose Guide Persona', modalVibeSub: "Choose the AI's language style.", vibeGenZTitle: 'Chill Gen-Z', vibeGenZDesc: 'Slangy, cool, trendy.', vibeHealingTitle: 'Healing Nature', vibeHealingDesc: 'Peaceful & Fresh.', vibeModernTitle: 'Modern City', vibeModernDesc: 'Urban & Trendy.', vibeFoodieTitle: 'Foodie Culinary', vibeFoodieDesc: 'Food hunting.', vibeAestheticTitle: 'Insta-Worthy', vibeAestheticDesc: 'Aesthetic photo spots.', vibeDefault: 'Default', vibeProTitle: 'Local Expert Guide', vibeProDesc: 'Informative local guide.', vibeIndieTitle: 'Sunset Indie', vibeIndieDesc: 'Poetic & Aesthetic.', vibeExpertTitle: 'Local Expert', vibeExpertDesc: 'Historical insights & local tips.', vibeCancelBtn: 'Cancel', vibeConfirmBtn: 'Choose Persona', socialRouteTitle: 'Route from Social', socialRouteDesc: 'Paste Reels or TikTok links.', socialQuotaLabel: 'QUOTA', inputAddLinkBtn: 'Input / Add Link', textMode: 'TEXT PROMPT', guestWarning: 'You are logged in as a Guest.', loginAction: 'Login so your history is not lost.' },
             ja: { historyTitle: 'ルート履歴', historySub: '最近の itineraries', historyNavTitle: 'ルート履歴', historyNavSub: '最近のルート', historyEmpty: '履歴なし', historyStops: '停止', routeBack: '戻る', exploreFeatures: '機能を探る', featuresSub: '天気・予算・AIルート...', socialLink: 'ソーシャルリンク', locationLocked: '位置情報ロック済み', buildRoute: 'AIルート作成', promptPlaceholder: 'バンドゥンの居心地よいカフェを探す...', categoryWalk: '散策', categoryEat: 'グルメ', categoryShop: 'ショッピング', categoryHangout: 'たまり場', categoryHeal: 'ヒーリング', upgradeKuota: 'クォータ追加', pilihPaket: 'プランを選ぶ', basicDesc: '個人利用に最適。ルート＆旅程を10回生成できます。', topupBtn: '今すぐ購入', bestValue: 'お得', proDesc: '旅人向けの無制限アクセス。ルート制限なし・AI優先キュー付き。', joinProBtn: 'プロに参加', securePayment: 'Mayar.idによる安全決済', modalSocialTitle: 'ソーシャルリンクを貼り付け', socialPlaceholder: 'ここにビデオリンクを貼り付け...', addLinkBtnText: '別のリンクを追加', saveLinksBtnText: '保存して続行', modalFeaturesTitle: 'AI機能を探る', feature1Title: 'プロンプトでルート作成', feature1Desc: '欲しいものを書くだけで、AIがトレンドスポットを含む完全な観光ルートを作成します！', feature2Title: '音声プロンプト', feature2Desc: '入力が面倒ですか？話すだけで、AIがリアルタイムであなたの声をエキサイティングなルートに翻訳します。', feature3Title: 'ソーシャルリンクから抽出', feature3Desc: 'TikTokやIGでバイラルビデオを見つけましたか？リンクを貼り付けると、AIが自動的に場所を抽出します。', feature4Title: 'バイラルキャプションを作成', feature4Desc: '旅行ルートを自慢するときに共有できる、インフルエンサー風のキャプション提案を受け取りましょう。', feature5Title: 'ビジュアルレシート', feature5Desc: 'ルート、おやつ、またはチケット babysit の自動予算内訳を、エステティックなレシートスタイルで表示します！', feature6Title: 'ガイドのペルソナ', feature6Desc: 'AIにリラックスしたZ世代、プロのツアーガイド、または詩的な夕暮れ愛好家のように話させたいか選んでください。', closeFeaturesBtnText: '探索を閉じる', modalQuotaLabel: '残りのメインクォータ', statGenerateRoute: 'ルート生成', statSocialLinks: 'ソーシャルリンク / ルート', benefitLabel: '追加特典', benefitViralCaption: 'バイラルキャプション', benefitVisualReceipt: 'ビジュアルレシート', buyPassBtnText: 'トラベルパスを購入', quotaOkBtnText: 'はい、準備完了！', modalVibeTitle: 'ガイドのペルソナを選択', modalVibeSub: 'あなたに同行するAIの言語スタイルを選択してください。', vibeGenZTitle: 'リラックスしたZ世代', vibeGenZDesc: 'スラングが多く、クールで、最新のソーシャルメディアのスラングがたくさん。', vibeDefault: 'デフォルト', vibeProTitle: 'ローカルエキスパートガイド', vibeProDesc: '地元の歴史教育、非常に有益で明確に構成されています。', vibeIndieTitle: 'サンセットインディー', vibeIndieDesc: '非常にエステティックで詩的な言語、ムーディーなヒーリングに最適。', vibeCustomTitle: '独自のペルソナを作成', vibeCustomDesc: 'AIに誰になってほしいか説明してください', vibeCustomPlaceholder: 'ここにペルソナを入力...', vibeCancelBtn: 'キャンセル', vibeConfirmBtn: 'ペルソナを選択', socialRouteTitle: 'ソーシャルメディアからのルート', socialRouteDesc: 'リールやTikTokのリンクを貼り付けて、目的地の自動収集を開始します。', socialQuotaLabel: 'クォータ', inputAddLinkBtn: 'リンクを入力 / 追加', textMode: 'テキストプロンプト', guestWarning: 'ゲストとしてログインしています。', loginAction: 'ルート履歴を保存するにはログインしてください。' },
             ko: { historyTitle: '경로 내역', historySub: 'Recent Itineraries', historyNavTitle: '경로 내역', historyNavSub: '최근 경로', historyEmpty: '내역 없음', historyStops: '경유지', routeBack: '뒤로', exploreFeatures: '기능 탐색', featuresSub: '날씨, 예산 & AI 경로...', socialLink: '소셜 링크', locationLocked: '위치 잠금됨', buildRoute: 'AI 경로 만들기', promptPlaceholder: '반둥에서 공부하기 좋은 카페 찾기...', categoryWalk: '도보 여행', categoryEat: '음식', categoryShop: '쇼핑', categoryHangout: '만남', categoryHeal: '힐링', upgradeKuota: '쿼터 업그레이드', pilihPaket: '프리미엄 플랜 선택', basicDesc: '개인 가끔 사용에 적합. 루트 & 일정 10회 생성 가능.', topupBtn: '지금 구매', bestValue: '최고 혜택', proDesc: '여행자를 위한 무제한 접속. 루트 제한 없음 및 AI 우선 대기.', joinProBtn: '프로 가입하기', securePayment: 'Mayar.id 안전 결제', modalSocialTitle: '소셜 링크 붙여넣기', socialPlaceholder: '여기에 비디오 링크 붙여넣기...', addLinkBtnText: '다른 링크 추가', saveLinksBtnText: '저장 및 계속', modalFeaturesTitle: 'AI 기능 탐색', feature1Title: '프롬프트로 경로 생성', feature1Desc: '원하는 것을 적기만 하면 AI가 인기 명소를 포함한 전체 관광 경로를 만들어 드립니다!', feature2Title: '음성 프롬프트', feature2Desc: '타이핑하기 귀찮으신가요? 말씀만 하세요. AI가 여러분의 목소리를 실시간으로 흥미로운 경로로 번역해 드립니다.', feature3Title: '소셜 링크에서 추출', feature3Desc: 'TikTok이나 IG에서 유행하는 영상을 보셨나요? 링크를 붙여넣으면 AI가 자동으로 위치를 추출해 드립니다.', feature4Title: '바이럴 캡션 만들기', feature4Desc: '여행 경로를 자랑할 때 공유할 인플루언서 스타일의 캡션 제안을 받아보세요.', feature5Title: '비주얼 영수증', feature5Desc: '경로, 간식 또는 티켓에 대한 자동 예산 내역을 감각적인 영수증 스타일로 확인하세요!', feature6Title: '가이드 페르소나', feature6Desc: 'AI 가 편안한 Z세대, 전문 투어 가이드 또는 시적인 감성의 소유자처럼 말하도록 선택할 수 있습니다.', closeFeaturesBtnText: '탐색 닫기', modalQuotaLabel: '남은 메인 쿼터', statGenerateRoute: '경로 생성', statSocialLinks: '소셜 링크 / 경로', benefitLabel: '추가 혜택', benefitViralCaption: '바이럴 캡션', benefitVisualReceipt: '비주얼 영수증', buyPassBtnText: '트래블 패스 구매', quotaOkBtnText: '확인, 완료!', modalVibeTitle: '가이드 페르소나 선택', modalVibeSub: '여행에 동행할 AI의 언어 스타일을 선택하세요.', vibeGenZTitle: '편안한 Z세대', vibeGenZDesc: '속어 사용, 쿨함, 최신 유행 소셜 미디어 유행어 다수 포함.', vibeDefault: '기본값', vibeProTitle: '현지 전문가 가이드', vibeProDesc: '현지 역사 교육, 매우 유익하고 체계적인 구조.', vibeIndieTitle: '선셋 인디', vibeIndieDesc: '매우 감각적이고 시적인 언어, 차분한 힐링에 완벽함.', vibeCustomTitle: '나만의 페르소나 만들기', vibeCustomDesc: 'AI가 누가 되기를 원하는지 설명하세요', vibeCustomPlaceholder: '여기에 페르소나 입력...', vibeCancelBtn: '취소', vibeConfirmBtn: '페르소나 선택', socialRouteTitle: '소셜 미디어 경로', socialRouteDesc: '릴스나 틱톡 링크를 붙여넣어 목적지 자동 추출을 시작하세요.', socialQuotaLabel: '쿼터', inputAddLinkBtn: '링크 입력 / 추가', textMode: '텍스트 프롬프트', guestWarning: '게스트로 로그인되어 있습니다.', loginAction: '경로 내역을 저장하려면 로그인하세요.' },
             zh: { historyTitle: '您的路线历史', historySub: '近期行程', historyNavTitle: '路线历史', historyNavSub: '近期路线', historyEmpty: '暂无历史', historyStops: '站点', routeBack: '返回', exploreFeatures: '探索功能', featuresSub: '天气、预算与AI路线...', socialLink: '社交链接', locationLocked: '位置已锁定', buildRoute: '生成AI路线', promptPlaceholder: '在万隆找一个适合学习的咖啡馆...', categoryWalk: '观光', categoryEat: '美食', categoryShop: '购物', categoryHangout: '聚会', categoryHeal: '疗愈', upgradeKuota: '升级配额', pilihPaket: '选择高级方案', basicDesc: '适合偶尔个人使用。获得10次路线和行程生成。', topupBtn: '立即充值', bestValue: '最超值', proDesc: '为旅行者提供无限访问。无路线限制，AI优先队列。', joinProBtn: '加入Pro计划', securePayment: 'Mayar.id安全支付', modalSocialTitle: '粘贴社交链接', socialPlaceholder: '在此处粘贴视频链接...', addLinkBtnText: '添加另一个链接', saveLinksBtnText: '保存并继续', modalFeaturesTitle: '探索我们的 AI 功能', feature1Title: '通过提示构建路线', feature1Desc: '只需写下您的需求，AI 就会为您规划包含热门景点的完整观光路线！', feature2Title: '语音提示', feature2Desc: '懒得打字？只需说话，AI 就会实时将您的声音转化为精彩的路线。', feature3Title: '从社交链接提取', feature3Desc: '在 TikTok 或 IG 上看到了热门视频？粘贴链接，让 AI 自动提取地点。', feature4Title: '创建热门文案', feature4Desc: '获取红人风格的文案建议，在展示您的旅行路线时分享。', feature5Title: '可视化收据', feature5Desc: '以精美的收据风格查看您的路线、零食或门票的自动预算明细！', feature6Title: '导游人格', feature6Desc: '选择您希望 AI 像轻松的 Z 世代、专业导游还是富有诗意的夕阳爱好者一样说话。', closeFeaturesBtnText: '关闭探索', modalQuotaLabel: '您的剩余主要配额', statGenerateRoute: '生成路线', statSocialLinks: '社交链接 / 路线', benefitLabel: '额外福利', benefitViralCaption: '热门文案', benefitVisualReceipt: '可视化收据', buyPassBtnText: '购买旅行通行证', quotaOkBtnText: '好的，准备好了！', modalVibeTitle: '选择导游人格', modalVibeSub: '选择 AI 的语言风格来陪伴您的旅行。', vibeGenZTitle: '轻松的 Z 世代', vibeGenZDesc: '俚语化、酷、包含大量流行的社交媒体俚语。', vibeDefault: '默认', vibeProTitle: '当地专家导游', vibeProDesc: '当地历史教育，信息量极大且结构清晰。', vibeIndieTitle: '夕阳独立风', vibeIndieDesc: '非常具有审美感，诗意的语言，非常适合忧郁的疗愈。', vibeCustomTitle: '创建您自己的人格', vibeCustomDesc: '描述您希望 AI 成为谁', vibeCustomPlaceholder: '在此处输入人格...', vibeCancelBtn: '取消', vibeConfirmBtn: '选择人格', socialRouteTitle: '社交媒体路线', socialRouteDesc: '粘贴 Reels 或 TikTok 链接，自动提取目的地。', socialQuotaLabel: '配额', inputAddLinkBtn: '输入 / 添加链接', textMode: '文本提示', guestWarning: '您目前以访客身份登录。', loginAction: '登录以保存您的路线历史。' },
@@ -1168,25 +1268,32 @@
                 let iconClass = '';
 
                 if (selected.value === 'Gen-Z') {
-                    badgeText = 'Gen-Z(W)';
+                    badgeText = 'Chill Gen-Z';
                     iconClass = 'fas fa-bolt text-rose-500';
                     document.getElementById('vibeTraitInput').value = '';
-                } else if (selected.value === 'Pro Guide') {
-                    badgeText = 'Pro Guide';
-                    iconClass = 'fas fa-map-signs text-emerald-500';
+                } else if (selected.value === 'Healing') {
+                    badgeText = 'Healing';
+                    iconClass = 'fas fa-leaf text-emerald-500';
                     document.getElementById('vibeTraitInput').value = '';
-                } else if (selected.value === 'Puitis') {
-                    badgeText = 'Senja';
-                    iconClass = 'fas fa-coffee text-rose-500';
+                } else if (selected.value === 'Modern') {
+                    badgeText = 'Modern';
+                    iconClass = 'fas fa-city text-blue-500';
                     document.getElementById('vibeTraitInput').value = '';
-                } else if (selected.value === 'Custom') {
-                    const customVal = document.getElementById('customVibeInput').value.trim();
-                    badgeText = customVal ? customVal.substring(0, 10) + '...' : 'Custom';
-                    iconClass = 'fas fa-magic text-amber-500';
-                    document.getElementById('vibeTraitInput').value = customVal;
+                } else if (selected.value === 'Foodie') {
+                    badgeText = 'Foodie';
+                    iconClass = 'fas fa-utensils text-orange-500';
+                    document.getElementById('vibeTraitInput').value = '';
+                } else if (selected.value === 'Aesthetic') {
+                    badgeText = 'Aesthetic';
+                    iconClass = 'fas fa-camera text-rose-500';
+                    document.getElementById('vibeTraitInput').value = '';
+                } else if (selected.value === 'Expert') {
+                    badgeText = 'Expert';
+                    iconClass = 'fas fa-chess-knight text-amber-500';
+                    document.getElementById('vibeTraitInput').value = '';
                 }
 
-                document.getElementById('vibeInput').value = selected.value === 'Gen-Z' ? 'Gen-Z(W)' : selected.value;
+                document.getElementById('vibeInput').value = selected.value === 'Gen-Z' ? 'Chill Gen-Z' : selected.value;
                 document.getElementById('vibeBtn').innerHTML = `<i class="${iconClass}"></i> ${badgeText} <i
         class="fas fa-chevron-down text-slate-400 text-[10px] ml-1"></i>`;
 

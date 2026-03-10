@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::{
     extract::{Form, State, Path, Json},
-    http::{HeaderMap, StatusCode},
+    http::{header, HeaderMap, StatusCode},
     response::{Html, IntoResponse},
 };
 use serde::{Deserialize, Serialize};
@@ -14,7 +14,20 @@ use crate::{mayar, sumopod, harvester, db, auth, AppState};
 #[template(path = "index.html")]
 pub struct IndexTemplate {
     pub history: Vec<db::RouteHistoryEntry>,
-    pub user: Option<auth::GoogleUser>,
+    pub user: Option<db::User>,
+    pub quota: db::QuotaStatus,
+}
+
+#[derive(Deserialize)]
+pub struct ConsumeQuotaRequest {
+    pub feature: String,
+}
+
+#[derive(Serialize)]
+pub struct QuotaResponse {
+    pub success: bool,
+    pub status: Option<db::QuotaStatus>,
+    pub error: Option<String>,
 }
 
 // Route Template
@@ -31,26 +44,94 @@ pub struct RouteTemplate {
 #[derive(Deserialize, Debug)]
 pub struct GeneratePayload {
     pub prompt: String,
+    pub vibe: Option<String>,
+    pub vibe_trait: Option<String>,
     pub links: Option<String>,
     pub lat: Option<f64>,
     pub lng: Option<f64>,
+}
+
+/// Helper to get or create a guest session ID from cookies
+fn get_or_create_guest_id(headers: &HeaderMap) -> (String, Option<String>) {
+    if let Some(cookie_header) = headers.get(header::COOKIE).and_then(|h| h.to_str().ok()) {
+        for part in cookie_header.split(';') {
+            let part = part.trim();
+            if let Some(val) = part.strip_prefix("ulyn_guest_id=") {
+                return (format!("guest_{}", val), None);
+            }
+        }
+    }
+    
+    let new_id = Uuid::new_v4().to_string();
+    let cookie = format!("ulyn_guest_id={}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000", new_id);
+    (format!("guest_{}", new_id), Some(cookie))
 }
 
 pub async fn root(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> impl IntoResponse {
-    let user = auth::get_current_user(&headers);
-    let history = db::get_route_history(&state.db, 5).await.unwrap_or_default();
-    let template = IndexTemplate { history, user };
-    Html(template.render().unwrap())
+    let auth_user = auth::get_current_user(&headers);
+    
+    let (db_user, user_id, set_cookie) = if let Some(ref u) = auth_user {
+        let db_u = db::find_user_by_email(&state.db, &u.email).await.unwrap_or(None);
+        (db_u, u.email.clone(), None)
+    } else {
+        let (gid, cookie) = get_or_create_guest_id(&headers);
+        (None, gid, cookie)
+    };
+
+    let history = db::get_route_history(&state.db, &user_id, 5).await.unwrap_or_default();
+    
+    let (db_user_ref, guest_id_ref) = if db_user.is_some() {
+        (db_user.as_ref(), None)
+    } else {
+        (None, Some(user_id.as_str()))
+    };
+
+    let quota = db::get_quota_status(&state.redis, db_user_ref, guest_id_ref).await
+        .unwrap_or(db::QuotaStatus {
+            route_used: 0, route_limit: 3,
+            caption_used: 0, caption_limit: 3,
+            receipt_used: 0, receipt_limit: 3,
+        });
+
+    let template = IndexTemplate { history, user: db_user, quota };
+    
+    let mut response = Html(template.render().unwrap()).into_response();
+    if let Some(cookie) = set_cookie {
+        response.headers_mut().insert(header::SET_COOKIE, cookie.parse().unwrap());
+    }
+    response
 }
 
 pub async fn generate(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Form(payload): Form<GeneratePayload>,
 ) -> impl IntoResponse {
     tracing::info!("Generate: Prompt='{}', Links={:?}", payload.prompt, payload.links);
+
+    // Get user info for quota
+    let auth_user = auth::get_current_user(&headers);
+    let db_user = if let Some(ref au) = auth_user {
+        db::find_user_by_email(&state.db, &au.email).await.unwrap_or(None)
+    } else {
+        None
+    };
+
+    let guest_id = if db_user.is_none() {
+        Some(get_or_create_guest_id(&headers).0)
+    } else {
+        None
+    };
+
+    // Check Quota
+    match db::check_and_consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), db::FeatureType::Route).await {
+        Ok(true) => (),
+        Ok(false) => return (StatusCode::FORBIDDEN, HeaderMap::new(), "Kuota harian habis. Silahkan topup atau kembali besok.").into_response(),
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), format!("Quota check failed: {}", e)).into_response(),
+    }
 
     // If social links were provided, harvest them first and enrich the prompt
     let effective_prompt = if let Some(ref links_str) = payload.links {
@@ -162,10 +243,19 @@ pub async fn generate(
     } else {
         payload.prompt.clone()
     };
-    // Inject location context if available
+
+    // Inject vibe/mood if available
+    let vibe_context = match (&payload.vibe, &payload.vibe_trait) {
+        (Some(v), Some(t)) if v == "Custom" && !t.is_empty() => format!("\n[VIBE: {}]", t),
+        (Some(v), _) if !v.is_empty() => format!("\n[VIBE: {}]", v),
+        _ => "".to_string(),
+    };
+
+    let effective_prompt = format!("{}{}", effective_prompt, vibe_context);
+
     let final_prompt = if let (Some(lat), Some(lng)) = (payload.lat, payload.lng) {
         format!(
-            "{}\n\n[CONTEXT: User is currently at Latitude: {}, Longitude: {}. Please ensure Step 0 of the route is their current location.]",
+            "{}\n\n[CONTEXT: User is currently at Latitude: {}, Longitude: {}. Use this as the starting point for navigation, but do NOT include a dedicated 'Starting Point' or 'Titik Lokasi' step in the steps list, as the UI already displays Step 0 for the user's location.]",
             effective_prompt, lat, lng
         )
     } else {
@@ -177,10 +267,19 @@ pub async fn generate(
             let mock_id = Uuid::new_v4();
             let route_json = serde_json::to_value(&route_data).unwrap_or(serde_json::Value::Null);
             
+            // Get user_id for history
+            let auth_user = auth::get_current_user(&headers);
+            let user_id = if let Some(u) = auth_user {
+                u.email
+            } else {
+                get_or_create_guest_id(&headers).0
+            };
+
             // Save to DB History
             let _ = db::save_route(
                 &state.db,
                 mock_id,
+                &user_id,
                 &route_data.title,
                 route_data.steps.first().map(|s| s.location_name.as_str()),
                 route_data.steps.len() as i32,
@@ -189,12 +288,12 @@ pub async fn generate(
 
             let mut headers = HeaderMap::new();
             headers.insert("HX-Redirect", format!("/route/{}", mock_id).parse().unwrap());
-            (StatusCode::OK, headers, "Redirecting to map...".to_string())
+            (StatusCode::OK, headers, "Redirecting to map...".to_string()).into_response()
         }
         Err(e) => {
             tracing::error!("AI Generation Error: {}", e);
             let headers = HeaderMap::new();
-            (StatusCode::INTERNAL_SERVER_ERROR, headers, format!("Error generating route: {}", e))
+            (StatusCode::INTERNAL_SERVER_ERROR, headers, format!("Error generating route: {}", e)).into_response()
         }
     }
 }
@@ -355,21 +454,42 @@ pub struct CheckoutPayload {
     pub amount: f64,
 }
 
-pub async fn checkout(Form(payload): Form<CheckoutPayload>) -> impl IntoResponse {
-    let customer_name = "Guest User".to_string();
-    let customer_email = "guest@ulyn.fun".to_string();
-    let invoice_number = format!("SOSMED-{}", payload.tier.to_uppercase());
+pub async fn checkout(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Form(payload): Form<CheckoutPayload>,
+) -> impl IntoResponse {
+    let auth_user = auth::get_current_user(&headers);
+    let user = if let Some(ref au) = auth_user {
+        db::find_user_by_email(&state.db, &au.email).await.unwrap_or(None)
+    } else {
+        None
+    };
+
+    if user.is_none() {
+        let mut headers = HeaderMap::new();
+        headers.insert("HX-Redirect", "/auth/google".parse().unwrap());
+        return (StatusCode::OK, headers, "Redirecting to login...").into_response();
+    }
+
+    let u = user.unwrap();
+    let customer_name = u.name.clone();
+    let customer_email = u.email.clone();
+    let invoice_number = format!("ULYN-{}-{}", &u.id.to_string()[..4].to_uppercase(), payload.tier.to_uppercase());
+
+    // Record the topup attempt in database
+    let _ = db::create_topup(&state.db, u.id, payload.amount, &payload.tier, &invoice_number, None).await;
 
     match mayar::create_invoice(&customer_name, &customer_email, payload.amount, &invoice_number).await {
         Ok(payment_url) => {
             let mut headers = HeaderMap::new();
             headers.insert("HX-Redirect", payment_url.parse().unwrap());
-            (StatusCode::OK, headers, "Redirecting to payment...")
+            (StatusCode::OK, headers, "Redirecting to payment...").into_response()
         }
         Err(e) => {
             tracing::error!("Payment error: {}", e);
             let headers = HeaderMap::new();
-            (StatusCode::INTERNAL_SERVER_ERROR, headers, "Failed to create payment link")
+            (StatusCode::INTERNAL_SERVER_ERROR, headers, "Failed to create payment link").into_response()
         }
     }
 }
@@ -407,9 +527,32 @@ pub struct CaptionResponse {
 }
 
 pub async fn generate_caption_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<CaptionRequest>,
 ) -> (StatusCode, Json<CaptionResponse>) {
     tracing::info!("CAPTION: Vibe={}, Places={:?}", payload.vibe, payload.places);
+
+    // Get user/guest info
+    let auth_user = auth::get_current_user(&headers);
+    let db_user = if let Some(ref au) = auth_user {
+        db::find_user_by_email(&state.db, &au.email).await.unwrap_or(None)
+    } else {
+        None
+    };
+
+    let guest_id = if db_user.is_none() {
+        Some(get_or_create_guest_id(&headers).0)
+    } else {
+        None
+    };
+
+    // Check Quota
+    match db::check_and_consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), db::FeatureType::Caption).await {
+        Ok(true) => (),
+        Ok(false) => return (StatusCode::FORBIDDEN, Json(CaptionResponse { caption: None, error: Some("Kuota harian habis. Silahkan topup atau kembali besok.".to_string()) })),
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(CaptionResponse { caption: None, error: Some(format!("Quota check failed: {}", e)) })),
+    }
 
     match sumopod::generate_caption(&payload.vibe, &payload.places).await {
         Ok(caption) => {
@@ -425,5 +568,62 @@ pub async fn generate_caption_handler(
                 }),
             )
         }
+    }
+}
+pub async fn get_quota_status_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> (StatusCode, Json<QuotaResponse>) {
+    let auth_user = auth::get_current_user(&headers);
+    let db_user = if let Some(ref au) = auth_user {
+        db::find_user_by_email(&state.db, &au.email).await.unwrap_or(None)
+    } else {
+        None
+    };
+
+    let guest_id = if db_user.is_none() {
+        Some(get_or_create_guest_id(&headers).0)
+    } else {
+        None
+    };
+
+    match db::get_quota_status(&state.redis, db_user.as_ref(), guest_id.as_deref()).await {
+        Ok(status) => (StatusCode::OK, Json(QuotaResponse { success: true, status: Some(status), error: None })),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(QuotaResponse { success: false, status: None, error: Some(e) })),
+    }
+}
+
+pub async fn consume_quota_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(payload): Json<ConsumeQuotaRequest>,
+) -> (StatusCode, Json<QuotaResponse>) {
+    let auth_user = auth::get_current_user(&headers);
+    let db_user = if let Some(ref au) = auth_user {
+        db::find_user_by_email(&state.db, &au.email).await.unwrap_or(None)
+    } else {
+        None
+    };
+
+    let guest_id = if db_user.is_none() {
+        Some(get_or_create_guest_id(&headers).0)
+    } else {
+        None
+    };
+
+    let feature = match payload.feature.as_str() {
+        "route" => db::FeatureType::Route,
+        "caption" => db::FeatureType::Caption,
+        "receipt" => db::FeatureType::Receipt,
+        _ => return (StatusCode::BAD_REQUEST, Json(QuotaResponse { success: false, status: None, error: Some("Invalid feature".to_string()) })),
+    };
+
+    match db::check_and_consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), feature).await {
+        Ok(true) => {
+            let status = db::get_quota_status(&state.redis, db_user.as_ref(), guest_id.as_deref()).await.ok();
+            (StatusCode::OK, Json(QuotaResponse { success: true, status, error: None }))
+        },
+        Ok(false) => (StatusCode::FORBIDDEN, Json(QuotaResponse { success: false, status: None, error: Some("Kuota harian habis".to_string()) })),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(QuotaResponse { success: false, status: None, error: Some(e) })),
     }
 }

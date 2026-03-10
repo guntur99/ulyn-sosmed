@@ -25,10 +25,12 @@
             }
         }
         // Apply theme immediately
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        if (savedTheme === 'dark') {
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
         } else {
+            document.documentElement.classList.add('light');
             document.documentElement.classList.remove('dark');
         }
     </script>
@@ -73,7 +75,8 @@
     </style>
 </head>
 
-<body class="bg-white flex h-screen w-full overflow-hidden">
+<body
+    class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex h-screen w-full overflow-hidden transition-colors duration-300">
 
     <!-- Sidebar Left -->
     <div class="w-full md:w-[480px] h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col z-10 relative shrink-0">
@@ -91,6 +94,10 @@
                 <button onclick="startNavigation(event)" title="Summary Perjalanan"
                     class="w-10 h-10 rounded-full bg-slate-800 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shadow-lg hover:opacity-90 active:scale-95 transition-all">
                     <i class="fas fa-route text-sm"></i>
+                </button>
+                <button onclick="toggleTheme()" id="themeBtn" title="Toggle Mode"
+                    class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all">
+                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
                 </button>
                 <button onclick="openShareModal(event)" title="Share ke Sosmed"
                     class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 flex items-center justify-center shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all">
@@ -308,7 +315,7 @@
             </button>
         </div>
 
-        <div id="map" class="w-full h-full bg-slate-100"></div>
+        <div id="map" class="w-full h-full bg-slate-100 dark:bg-slate-950"></div>
     </div>
 
     <!-- Edit Route Modal -->
@@ -690,7 +697,8 @@
     </div>
 
     <script>
-        const rawRoute = {{ route_json| safe }};
+        var rawRoute = ({{ route_json| safe }}) || {};
+        console.log("rawRoute check:", { hasSteps: !!rawRoute.steps, stepCount: (rawRoute.steps || []).length });
         // --- EDIT ROUTE MODAL LOGIC ---
         var keepRecsChecked = true;
 
@@ -741,7 +749,10 @@
             const sosmedLinks = document.getElementById('editRouteSosmedLinks').value.trim();
             const btn = document.getElementById('editRouteSubmitBtn');
 
-            if (!addlPrompt && !sosmedLinks) {
+            // Allow if there's a prompt, links, OR we're keeping existing recommendations
+            const canSubmit = addlPrompt || sosmedLinks || (keepRecsChecked && baseSteps.length > 0);
+
+            if (!canSubmit) {
                 document.getElementById('editRoutePrompt').focus();
                 document.getElementById('editRoutePrompt').classList.add('border-rose-400');
                 setTimeout(() => document.getElementById('editRoutePrompt').classList.remove('border-rose-400'), 2000);
@@ -751,7 +762,7 @@
             // Build the final prompt
             let finalPrompt = addlPrompt || '';
             if (keepRecsChecked && baseSteps.length > 0) {
-                const names = baseSteps.map(s => s.name).join(', ');
+                const names = baseSteps.map(s => s.location_name).join(', ');
                 const keepNote = `Pertahankan rekomendasi berikut jika memungkinkan: ${names}.`;
                 finalPrompt = finalPrompt ? `${finalPrompt}. ${keepNote}` : keepNote;
             }
@@ -777,6 +788,15 @@
 
             addField('prompt', finalPrompt || 'Buatkan rute perjalanan terbaik.');
             if (sosmedLinks) addField('links', sosmedLinks);
+
+            // Add Lat/Lng if user location is detected
+            if (userMarker) {
+                const pos = (usingGoogle) ? userMarker.getPosition() : userMarker.getLatLng();
+                const lat = (usingGoogle) ? pos.lat() : pos.lat;
+                const lng = (usingGoogle) ? pos.lng() : pos.lng;
+                addField('lat', lat);
+                addField('lng', lng);
+            }
 
             document.body.appendChild(form);
             form.submit();
@@ -829,6 +849,22 @@
             const scaffold = document.getElementById('receipt-scaffold-original');
             const itemsContainer = document.getElementById('receipt-items-original');
 
+            // Consume Quota first
+            try {
+                const qResp = await fetch('/api/quota/consume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ feature: 'receipt' })
+                });
+                const qData = await qResp.json();
+                if (!qData.success) {
+                    container.innerHTML = `<div class="p-4 text-rose-500 text-xs text-center font-bold">${qData.error || 'Kuota harian habis.'}</div>`;
+                    return;
+                }
+            } catch (e) {
+                console.error('Quota consume failed', e);
+            }
+
             itemsContainer.innerHTML = '';
             const destinations = (rawRoute.steps || []).map(s => s.location_name).filter(n => n && n.trim().length > 0);
 
@@ -865,30 +901,39 @@
             el.classList.remove('border-slate-100', 'dark:border-slate-800', 'text-slate-600', 'dark:text-slate-400');
         }
 
-        function generateCaption() {
+        async function generateCaption() {
             const btn = document.getElementById('btn-gen-caption');
             const resultArea = document.getElementById('caption-result');
-            const title = rawRoute.title || "";
             const destinations = (rawRoute.steps || []).map(s => s.location_name).filter(n => n && n.trim().length > 0);
+
+            if (destinations.length === 0) return;
 
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
 
-            setTimeout(() => {
-                let text = "";
-                if (currentVibe === 'flex') {
-                    text = `Weekend dump from ${title} ✨\n\nChecked off some prime spots today:\n📍 ${destinations.join('\n📍 ')}\n\nFound my peace, lost my phone battery.🎒🌊 #UlynApp #AestheticTravel #TripGoals`;
-                } else if (currentVibe === 'story') {
-                    text = `A thread on why ${title} is a vibe 🧵👇\n\n1. It starts with the view.\n2. Then the food at ${destinations[0]}.\n3. And finally, the memories at ${destinations[destinations.length - 1]}.\n\nFull itinerary is up on @ulyn_official. Go check it! 🚀`;
-                } else if (currentVibe === 'witty') {
-                    text = `Waktu bilang mau healing, tapi dompet bilang pusing.🤡💸\n\nAnyway, jalan-jalan di ${title} nggak pernah gagal bikin lupa cicilan sebentar. Ke ${destinations[0]} cuma buat liat harganya doang, terus kabur.😂\n\n#HealingTipisTipis #TravelMeme`;
-                } else {
-                    text = `Slowing down in ${title}...🍃\n\nSometimes all you need is a new perspective and the cold breeze at ${destinations[0]}. This itinerary hits different.🐚✨\n\n#SoulTrip #Mindfulness #UlynItinerary`;
+            try {
+                const response = await fetch('/api/caption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vibe: currentVibe,
+                        places: destinations
+                    })
+                });
+
+                const data = await response.json();
+                if (data.caption) {
+                    resultArea.value = data.caption;
+                } else if (data.error) {
+                    alert(data.error);
                 }
-                resultArea.value = text;
+            } catch (e) {
+                console.error('Caption generation failed', e);
+                alert('Gagal membuat caption. Silahkan coba lagi nanti.');
+            } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-wand-magic-sparkles mr-2"></i> <span data-i18n="genCaption">Buatkan Caption Viral</span>';
-            }, 800);
+            }
         }
 
         function copyCaption(e) {
@@ -942,15 +987,21 @@
         var googleMap = null;
         var usingGoogle = false;
         var routeLayers = null;
+        var userMarker = null;
+        var initialMarkers = [];
 
         // Route Data
-        var baseSteps = rawRoute.steps || [];
-
-        var baseLatlngs = baseSteps.map(s => [s.lat, s.lng]);
+        var baseSteps = (rawRoute.steps || []).filter(s => {
+            const lat = parseFloat(s.latitude);
+            const lng = parseFloat(s.longitude);
+            return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+        });
+        var baseLatlngs = baseSteps.map(s => [parseFloat(s.latitude), parseFloat(s.longitude)]);
+        console.log("Initial Route Data:", { steps: baseSteps.length, latlngs: baseLatlngs.length });
+        var lastRouteFetchId = 0;
         var currentTravelMode = 'driving';
-
         // Initial Draw
-        var initialMarkers = [];
+        var initialMarkersLeaflet = [];
 
         function drawInitialMarkers() {
             if (!map) return;
@@ -959,6 +1010,9 @@
             if (usingGoogle) {
                 initialMarkers.forEach(m => m.setMap(null));
                 initialMarkers = [];
+            } else {
+                initialMarkersLeaflet.forEach(m => map.removeLayer(m));
+                initialMarkersLeaflet = [];
             }
 
             baseLatlngs.forEach((ll, index) => {
@@ -989,13 +1043,16 @@
                         iconSize: [32, 32],
                         iconAnchor: index === 0 ? [16, 16] : [16, 32]
                     });
-                    L.marker(ll, { icon: mkIcon }).addTo(map);
+                    const m = L.marker(ll, { icon: mkIcon }).addTo(map);
+                    initialMarkersLeaflet.push(m);
                 }
             });
         }
 
         function fetchAndDrawRoute() {
             if (!map || !routeLayers) return;
+
+            const currentFetchId = ++lastRouteFetchId;
 
             if (usingGoogle) {
                 routeLayers.forEach(l => l.setMap(null));
@@ -1004,12 +1061,32 @@
                 routeLayers.clearLayers();
             }
 
-            var points = [];
-            if (userMarker) {
-                const userPos = usingGoogle ? userMarker.getPosition() : userMarker.getLatLng();
-                points.push([usingGoogle ? userPos.lat() : userPos.lat, usingGoogle ? userPos.lng() : userPos.lng]);
+            var rawPoints = [];
+            if (typeof userMarker !== 'undefined' && userMarker) {
+                try {
+                    const userPos = usingGoogle ? userMarker.getPosition() : userMarker.getLatLng();
+                    rawPoints.push([usingGoogle ? userPos.lat() : userPos.lat, usingGoogle ? userPos.lng() : userPos.lng]);
+                } catch (e) {
+                    console.warn("Could not get user position for route drawing:", e);
+                }
             }
-            points = points.concat(baseLatlngs);
+            rawPoints = rawPoints.concat(baseLatlngs);
+            console.log("rawPoints for drawing:", rawPoints.length);
+
+            // Filter points: remove duplicates (identical consecutive points)
+            var points = [];
+            for (let i = 0; i < rawPoints.length; i++) {
+                if (i === 0) {
+                    points.push(rawPoints[i]);
+                } else {
+                    const prev = rawPoints[i - 1];
+                    const curr = rawPoints[i];
+                    // If distance is significant (> 1 meter approx)
+                    if (Math.abs(prev[0] - curr[0]) > 0.00001 || Math.abs(prev[1] - curr[1]) > 0.00001) {
+                        points.push(curr);
+                    }
+                }
+            }
 
             if (points.length > 1) {
                 // FALLBACK POLYLINE
@@ -1020,20 +1097,24 @@
                         strokeColor: '#f43f5e',
                         strokeOpacity: 0.6,
                         strokeWeight: 6,
-                        map: googleMap
+                        map: googleMap,
+                        zIndex: 0
                     });
                     routeLayers.push(fallback);
                 } else {
-                    L.polyline(points, { color: '#f43f5e', weight: 6, opacity: 0.6, dashArray: '10, 10' }).addTo(routeLayers);
+                    L.polyline(points, { color: '#f43f5e', weight: 6, opacity: 0.5, dashArray: '10, 10' }).addTo(routeLayers);
                 }
 
                 var osrmCoords = points.map(ll => ll[1] + ',' + ll[0]).join(';');
                 var profile = currentTravelMode === 'walking' ? 'walking' : 'driving';
                 var osrmUrl = `https://router.project-osrm.org/route/v1/${profile}/` + osrmCoords + '?overview=full&geometries=geojson';
+                console.log("Fetching OSRM route:", { mode: profile, url: osrmUrl });
 
                 fetch(osrmUrl)
                     .then(response => response.json())
                     .then(data => {
+                        if (currentFetchId !== lastRouteFetchId) return; // Stale fetch
+
                         if (data.routes && data.routes.length > 0) {
                             if (usingGoogle) {
                                 routeLayers.forEach(l => l.setMap(null));
@@ -1045,7 +1126,8 @@
                                     strokeColor: '#f43f5e',
                                     strokeOpacity: 1.0,
                                     strokeWeight: 6,
-                                    map: googleMap
+                                    map: googleMap,
+                                    zIndex: 10
                                 });
                                 routeLayers.push(mainLine);
 
@@ -1057,26 +1139,41 @@
                                 }
                             } else {
                                 routeLayers.clearLayers();
-                                var routeCoords = data.routes[0].geometry;
-                                L.geoJSON(routeCoords, { style: { color: '#be123c', weight: 12, opacity: 0.25 } }).addTo(routeLayers);
-                                var polyline = L.geoJSON(routeCoords, { style: { color: '#f43f5e', weight: 6, opacity: 1.0 } }).addTo(routeLayers);
+                                const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+
+                                // Glowing background line
+                                L.polyline(routeCoords, { color: '#be123c', weight: 12, opacity: 0.2 }).addTo(routeLayers);
+                                // Main visible line
+                                const mainPoly = L.polyline(routeCoords, { color: '#f43f5e', weight: 6, opacity: 1.0 }).addTo(routeLayers);
+
                                 if (!window.hasInitiallyFitted) {
-                                    map.fitBounds(polyline.getBounds(), { padding: [100, 100] });
+                                    map.fitBounds(mainPoly.getBounds(), { padding: [100, 100] });
                                     window.hasInitiallyFitted = true;
                                 }
                             }
                         }
                     })
-                    .catch(err => console.warn('OSRM failed', err));
+                    .catch(e => {
+                        console.error("OSRM Route Fetch Error:", e);
+                        // Fallback: draw straight lines if OSRM fails
+                        if (usingGoogle) {
+                            // Already handled as fallback polyline remains in routeLayers
+                        } else {
+                            // Dotted line already added, just log it
+                        }
+                    });
             } else if (points.length === 1) {
-                if (usingGoogle) googleMap.setCenter({ lat: points[0][0], lng: points[0][1] });
-                else map.setView(points[0], 14);
+                if (usingGoogle) {
+                    googleMap.setCenter({ lat: points[0][0], lng: points[0][1] });
+                } else {
+                    map.setView(points[0], 14);
+                }
             }
         }
 
         function startNavigation(e) {
             if (e && e.preventDefault) e.preventDefault();
-            console.log("startNavigation trigger...");
+            console.log("startNavigation trigger. Steps:", baseSteps.length, "Latlngs:", baseLatlngs.length);
 
             try {
                 const modal = document.getElementById('tripPreviewModal');
@@ -1140,17 +1237,17 @@
 
                 if (hasPrice && budgetValue) {
                     budgetValue.innerText = `Rp ${minTotal}k - ${maxTotal}k`;
-                    const budgetCard = budgetValue.closest('div.rounded-2xl');
+                    const budgetCard = budgetValue.closest('div.rounded-2xl') || budgetValue.parentElement;
                     if (budgetCard) budgetCard.classList.remove('hidden');
                 } else if (budgetValue) {
-                    const budgetCard = budgetValue.closest('div.rounded-2xl');
+                    const budgetCard = budgetValue.closest('div.rounded-2xl') || budgetValue.parentElement;
                     if (budgetCard) budgetCard.classList.add('hidden');
                 }
 
                 // Populate Timeline
                 if (timeline) {
                     let timelineHtml = "";
-                    if (userMarker) {
+                    if (typeof userMarker !== 'undefined' && userMarker) {
                         timelineHtml += `
                             <div class="flex gap-4 relative pb-8">
                                 <div class="absolute left-[7.5px] top-3 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800/50"></div>
@@ -1162,18 +1259,24 @@
                             </div>`;
                     }
 
-                    baseSteps.forEach((step, i) => {
-                        const isLast = i === baseSteps.length - 1;
-                        timelineHtml += `
-                            <div class="flex gap-4 relative ${isLast ? '' : 'pb-8'}">
-                                ${isLast ? '' : '<div class="absolute left-[7.5px] top-3 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800/50"></div>'}
-                                <div class="w-4 h-4 rounded-full bg-rose-500 mt-1 flex-shrink-0 z-10 ring-4 ring-white dark:ring-slate-900 shadow-sm border-2 border-white dark:border-slate-900"></div>
-                                <div class="flex-1">
-                                    <p class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">${step.name}</p>
-                                    <p class="text-[10px] text-slate-400 dark:text-slate-500 leading-tight font-medium mt-0.5">${step.address || step.category || 'Destinasi Perjalanan'}</p>
-                                </div>
-                            </div>`;
-                    });
+                    if (baseSteps && baseSteps.length > 0) {
+                        baseSteps.forEach((step, i) => {
+                            const isLast = i === baseSteps.length - 1;
+                            const title = step.location_name || step.name || "Tujuan " + (i + 1);
+                            const desc = step.address || step.category || 'Destinasi Perjalanan';
+                            timelineHtml += `
+                                <div class="flex gap-4 relative ${isLast ? '' : 'pb-8'}">
+                                    ${isLast ? '' : '<div class="absolute left-[7.5px] top-3 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800/50"></div>'}
+                                    <div class="w-4 h-4 rounded-full bg-rose-500 mt-1 flex-shrink-0 z-10 ring-4 ring-white dark:ring-slate-900 shadow-sm border-2 border-white dark:border-slate-900"></div>
+                                    <div class="flex-1">
+                                        <p class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">${title}</p>
+                                        <p class="text-[10px] text-slate-400 dark:text-slate-500 leading-tight font-medium mt-0.5">${desc}</p>
+                                    </div>
+                                </div>`;
+                        });
+                    } else {
+                        timelineHtml += `<p class='text-[10px] text-slate-400 italic py-4 text-center'>Tidak ada rute yang terdeteksi...</p>`;
+                    }
 
                     timeline.innerHTML = timelineHtml;
                 }
@@ -1182,6 +1285,7 @@
                 console.log("Modal shown.");
             } catch (err) {
                 console.error("startNavigation crash:", err);
+                alert("Gagal menampilkan rute (Error: " + err.message + ")");
             }
         }
 
@@ -1208,22 +1312,29 @@
         // Initial Draw
         fetchAndDrawRoute();
 
-        const html = document.documentElement;
-        const themeBtn = document.getElementById('themeBtn');
-
-        function toggleDarkMode() {
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                html.classList.add('light');
-                if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-moon text-sm"></i>';
+        function toggleTheme() {
+            const h = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (h.classList.contains('dark')) {
+                h.classList.remove('dark');
+                h.classList.add('light');
+                if (icon) icon.classList.replace('fa-sun', 'fa-moon');
                 localStorage.setItem('theme', 'light');
             } else {
-                html.classList.remove('light');
-                html.classList.add('dark');
-                if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-sun text-sm"></i>';
+                h.classList.remove('light');
+                h.classList.add('dark');
+                if (icon) icon.classList.replace('fa-moon', 'fa-sun');
                 localStorage.setItem('theme', 'dark');
             }
         }
+
+        // Initialize theme icon
+        document.addEventListener('DOMContentLoaded', () => {
+            const icon = document.getElementById('themeIcon');
+            if (document.documentElement.classList.contains('dark')) {
+                if (icon) icon.classList.replace('fa-moon', 'fa-sun');
+            }
+        });
 
         // Language Logic
         const routeTranslations = {
@@ -1309,17 +1420,13 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Theme Logic
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            if (savedTheme === 'dark') {
-                document.documentElement.classList.add('dark');
-                if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-sun text-sm"></i>';
-            } else {
-                document.documentElement.classList.remove('dark');
-                if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-moon text-sm"></i>';
-            }
+        // Catch all errors for easier debugging
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            console.error('JS Error:', msg, 'at', url, 'line', lineNo, 'col', columnNo, error);
+            return false;
+        };
 
+        document.addEventListener('DOMContentLoaded', () => {
             // Language Logic
             const savedLang = localStorage.getItem('language') || 'id';
             console.log("Route Page Loaded. Language from localStorage:", savedLang);
@@ -1372,18 +1479,22 @@
             initUserLocation();
         });
 
-        let userMarker;
         function initUserLocation() {
             const statusText = document.getElementById('userLocText');
+            const foundText = document.querySelector('[data-i18n="routeFound"]');
 
             if (!navigator.geolocation) {
                 if (statusText) statusText.innerText = "Geolocation tidak didukung browser kamu";
                 return;
             }
 
+            // Initial searching state
+            if (statusText) statusText.innerHTML = `<span class='text-blue-500'><i class='fas fa-circle-notch fa-spin mr-2'></i>Mencari Lokasi...</span>`;
+            if (foundText) foundText.innerHTML = `<span class='text-blue-400 opacity-75 italic animate-pulse'>Sedang mencoba mendapatkan koordinat presisi...</span>`;
+
             const geoOptions = {
                 enableHighAccuracy: true,
-                timeout: 5000,
+                timeout: 10000,
                 maximumAge: 0
             };
 
@@ -1394,7 +1505,6 @@
                 if (statusText) {
                     statusText.innerHTML = `<span class='text-emerald-500'><i class='fas fa-check-circle mr-2'></i>Lokasi Kamu Terkunci</span>`;
                 }
-                const foundText = document.querySelector('[data-i18n="routeFound"]');
                 if (foundText) {
                     foundText.innerHTML = `<i class='fas fa-crosshairs mr-2 animate-pulse'></i>Koordinat presisi terdeteksi (${crd.latitude.toFixed(4)}, ${crd.longitude.toFixed(4)})`;
                 }
@@ -1437,13 +1547,13 @@
             function error(err) {
                 console.warn(`ERROR(${err.code}): ${err.message}`);
                 let msg = "Akses lokasi ditolak";
-                if (err.code === 2) msg = "Lokasi tidak terdeteksi";
-                if (err.code === 3) msg = "Waktu akses lokasi habis";
+                if (err.code === 1) msg = "Izin lokasi ditolak (Cek setting browser)";
+                if (err.code === 2) msg = "Sinyal GPS lemah / Lokasi tidak tersedia";
+                if (err.code === 3) msg = "Waktu pencarian lokasi habis";
 
                 if (statusText) statusText.innerHTML = `<span class='text-amber-500'><i class='fas fa-exclamation-triangle mr-2'></i>Manual Mode</span>`;
-                const foundText = document.querySelector('[data-i18n="routeFound"]');
                 if (foundText) {
-                    foundText.innerHTML = `<span class='text-amber-500'>${msg}. Pakai rute default.</span>`;
+                    foundText.innerHTML = `<span class='text-amber-500'>${msg}. <br><span class='text-[10px] opacity-80'>Menggunakan rute default. Kami akan terus mencoba mendeteksi lokasi kamu...</span></span>`;
                 }
             }
 
