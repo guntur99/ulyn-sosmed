@@ -248,7 +248,8 @@
                         class="w-5 h-5 rounded-full bg-rose-500 text-[10px] text-white flex items-center justify-center font-bold relative z-20">
                         3</div>
                 </div>
-                <span class="text-[10px] font-black text-slate-400 tracking-[0.2em]">ITINERARY PILIHAN &bull; {{
+                <span class="text-[10px] font-black text-slate-400 tracking-[0.2em]"
+                    data-i18n="routeTranslateLabel">ITINERARY PILIHAN &bull; {{
                     current_date }}</span>
                 <div
                     class="ml-auto flex border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 bg-slate-50 dark:bg-slate-900/50">
@@ -356,11 +357,12 @@
                 <!-- Hidden State Placeholder -->
                 <div id="step-hidden-{{ index }}"
                     class="hidden py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 restore-btn">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Destinasi
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"
+                        data-i18n="destHidden">Destinasi
                         Tersembunyi</span>
                     <button onclick="restoreStep({{ index }})"
                         class="px-4 py-2 bg-rose-500 text-white text-[10px] font-black rounded-lg shadow-lg hover:bg-rose-600 transition-all uppercase tracking-widest">
-                        <i class="fas fa-undo mr-1"></i> Pulihkan
+                        <i class="fas fa-undo mr-1"></i> <span data-i18n="restore">Pulihkan</span>
                     </button>
                 </div>
 
@@ -369,8 +371,8 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <span
-                                class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 rounded-lg uppercase tracking-widest">STEP
-                                {{ index + 1 }}</span>
+                                class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 rounded-lg uppercase tracking-widest"
+                                data-i18n="stepLabel">STEP</span>
                             <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest">{{
                                 step.category }}</span>
                         </div>
@@ -386,7 +388,7 @@
                     <div class="space-y-2">
                         <div class="minimalist-tips" onclick="toggleTips({{ index }})">
                             <i class="fas fa-wand-magic-sparkles text-indigo-500 text-sm"></i>
-                            <span class="tips-text">LIHAT TIPS DARI PERSONA KAMU</span>
+                            <span class="tips-text" data-i18n="seePersonaTips">LIHAT TIPS DARI PERSONA KAMU</span>
                             <i id="tips-chevron-{{ index }}"
                                 class="fas fa-chevron-down ml-auto text-indigo-400 text-[10px] transition-transform"></i>
                         </div>
@@ -398,7 +400,8 @@
                         </div>
                     </div>
                     <div class="mt-8 mb-3 flex items-center justify-between px-1">
-                        <span class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em]">REKOMENDASI
+                        <span class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em]"
+                            data-i18n="mainRecommendation">REKOMENDASI
                             UTAMA</span>
                     </div>
 
@@ -456,7 +459,8 @@
                         <div class="relative flex items-center py-2">
                             <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
                             <span
-                                class="flex-shrink mx-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">ATAU
+                                class="flex-shrink mx-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]"
+                                data-i18n="orChooseBackup">ATAU
                                 PILIH KURSI CADANGAN ({{ candidates.len() }})</span>
                             <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
                         </div>
@@ -494,7 +498,8 @@
                                 {% if c_idx == 0 %}
                                 <div
                                     class="mt-2 flex items-center gap-2 text-[9px] font-black text-rose-500 uppercase tracking-widest swipe-indicator opacity-50">
-                                    <span>Slide ke kanan</span> <i class="fas fa-arrow-right"></i>
+                                    <span data-i18n="slideToRight">Slide ke kanan</span> <i
+                                        class="fas fa-arrow-right"></i>
                                 </div>
                                 {% endif %}
                             </div>
@@ -1840,6 +1845,50 @@
         // Initial Draw
         fetchAndDrawRoute();
 
+        const googleDarkModeStyle = [
+            { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+            { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+            { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+            { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+            { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+            { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+            { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+            { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+            { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+            { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
+            { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+            { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+            { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
+        ];
+
+        let tileLayer;
+        function updateMapTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (usingGoogle && googleMap) {
+                googleMap.setOptions({
+                    styles: isDark ? googleDarkModeStyle : [
+                        { "featureType": "all", "elementType": "labels.text.fill", "stylers": [{ "color": "#7c93a3" }, { "lightness": "-10" }] },
+                        { "featureType": "administrative.country", "elementType": "geometry.stroke", "stylers": [{ "color": "#a0041e" }] }
+                    ]
+                });
+            } else if (map && !usingGoogle) {
+                if (tileLayer) map.removeLayer(tileLayer);
+                const url = isDark
+                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+                tileLayer = L.tileLayer(url, {
+                    attribution: '&copy; OpenStreetMap & CARTO',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(map);
+            }
+        }
+
         function toggleTheme() {
             const h = document.documentElement;
             const icon = document.getElementById('themeIcon');
@@ -1854,6 +1903,7 @@
                 if (icon) icon.classList.replace('fa-moon', 'fa-sun');
                 localStorage.setItem('theme', 'dark');
             }
+            updateMapTheme();
         }
 
         // Initialize theme icon
@@ -1894,7 +1944,10 @@
                 keepRecsDesc: 'Jika dicentang, AI akan mencoba memasukkan tempat-tempat yang sudah dipilih sebelumnya.',
                 cancel: 'BATAL', buildNewRoute: 'BUAT RUTE BARU',
                 editRoutePlaceholder: 'Contoh: Mampir ke tempat favoritmu, atau cari hotel yang ada kolam renangnya...',
-                socialLinksPlaceholder: 'https://www.instagram.com/p/... atau link TikTok'
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... atau link TikTok',
+                destHidden: 'Destinasi Tersembunyi', restore: 'Pulihkan', stepLabel: 'STEP',
+                seePersonaTips: 'LIHAT TIPS DARI PERSONA KAMU', mainRecommendation: 'REKOMENDASI UTAMA',
+                orChooseBackup: 'ATAU PILIH KURSI CADANGAN', slideToRight: 'Slide ke kanan'
             },
             en: {
                 regGiftLabel: 'SPECIAL GIFT', regGift: 'Get 7 Free Credits on Your First Registration',
@@ -1924,7 +1977,10 @@
                 keepRecsDesc: 'If checked, AI will try to include previously selected places.',
                 cancel: 'CANCEL', buildNewRoute: 'BUILD NEW ROUTE',
                 editRoutePlaceholder: 'Ex: Visit my favorite spots, or find a hotel with a pool...',
-                socialLinksPlaceholder: 'https://www.instagram.com/p/... or TikTok link'
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... or TikTok link',
+                destHidden: 'Hidden Destination', restore: 'Restore', stepLabel: 'STEP',
+                seePersonaTips: 'VIEW TIPS FROM YOUR PERSONA', mainRecommendation: 'MAIN RECOMMENDATION',
+                orChooseBackup: 'OR CHOOSE BACKUP CANDIDATES', slideToRight: 'Slide to right'
             },
             ja: {
                 regGiftLabel: 'スペシャルギフト', regGift: '初回登録で7つの無料クレジットをゲット',
@@ -1954,7 +2010,10 @@
                 keepRecsDesc: 'チェックを入れると、AIは以前に選択した場所を含めようとします。',
                 cancel: 'キャンセル', buildNewRoute: '新しいルートを作成',
                 editRoutePlaceholder: '例：お気に入りの場所を訪れる、またはプールのあるホテルを探す...',
-                socialLinksPlaceholder: 'https://www.instagram.com/p/... または TikTokリンク'
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... または TikTokリンク',
+                destHidden: '非表示の目的地', restore: '復元', stepLabel: 'ステップ',
+                seePersonaTips: 'ペルソナからのヒントを表示', mainRecommendation: '主な推奨事項',
+                orChooseBackup: 'またはバックアップ候補を選択', slideToRight: '右にスライド'
             },
             ko: {
                 regGiftLabel: '특별 선물', regGift: '첫 회원가입 시 7개 무료 크레딧 증정',
@@ -1984,7 +2043,10 @@
                 keepRecsDesc: '선택하면 AI가 이전에 선택한 장소를 포함하려고 시도합니다.',
                 cancel: '취소', buildNewRoute: '새 경로 생성',
                 editRoutePlaceholder: '예: 제가 좋아하는 장소를 방문하거나 수영장이 있는 호텔을 찾아주세요...',
-                socialLinksPlaceholder: 'https://www.instagram.com/p/... 또는 틱톡 링크'
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... 또는 틱톡 링크',
+                destHidden: '숨겨진 목적지', restore: '복구', stepLabel: '단계',
+                seePersonaTips: '페르소나 팁 보기', mainRecommendation: '주요 권장 사항',
+                orChooseBackup: '또는 예비 후보 선택', slideToRight: '오른쪽으로 슬라이드'
             },
             zh: {
                 regGiftLabel: '特别礼品', regGift: '首次注册即可获赠 7 个免费积分',
@@ -2014,7 +2076,10 @@
                 keepRecsDesc: '如果选中，AI 将尝试包含之前选择的地点。',
                 cancel: '取消', buildNewRoute: '创建新路线',
                 editRoutePlaceholder: '例如：去我最喜欢的地方，或者找一个带泳池的酒店...',
-                socialLinksPlaceholder: 'https://www.instagram.com/p/... 或 TikTok 链接'
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... 或 TikTok 链接',
+                destHidden: '隐藏目的地', restore: '恢复', stepLabel: '步骤',
+                seePersonaTips: '查看人物角色提示', mainRecommendation: '主要建议',
+                orChooseBackup: '或选择备选方案', slideToRight: '向右滑动'
             },
             ru: {
                 regGiftLabel: 'СПЕЦИАЛЬНЫЙ ПОДАРОК', regGift: 'Получите 7 бесплатных кредитов при первой регистрации',
@@ -2044,7 +2109,10 @@
                 keepRecsDesc: 'Если выбрано, ИИ постарается включить ранее выбранные места.',
                 cancel: 'ОТМЕНА', buildNewRoute: 'СОЗДАТЬ НОВЫЙ МАРШРУТ',
                 editRoutePlaceholder: 'Пример: Посетить мои любимые места или найти отель с бассейном...',
-                socialLinksPlaceholder: 'https://www.instagram.com/p/... или ссылка на TikTok'
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... или ссылка на TikTok',
+                destHidden: 'Скрытое место', restore: 'Восстановить', stepLabel: 'ШАГ',
+                seePersonaTips: 'ПОСМОТРЕТЬ СОВЕТЫ ПЕРСОНАЖА', mainRecommendation: 'ГЛАВНАЯ РЕКОМЕНДАЦИЯ',
+                orChooseBackup: 'ИЛИ ВЫБЕРИТЕ ЗАПАСНЫЕ ВАРИАНТЫ', slideToRight: 'Слайд вправо'
             },
             nl: {
                 regGiftLabel: 'SPECIALE CADEAU', regGift: 'Ontvang 7 gratis credits bij je eerste registratie',
@@ -2074,7 +2142,10 @@
                 keepRecsDesc: 'Indien aangevinkt, zal de AI proberen eerder geselecteerde plaatsen op te nemen.',
                 cancel: 'ANNULEREN', buildNewRoute: 'NIEUWE ROUTE MAAKEN',
                 editRoutePlaceholder: 'Bijv: Bezoek mijn favoriete plekken, of zoek een hotel met zwembad...',
-                socialLinksPlaceholder: 'https://www.instagram.com/p/... of TikTok link'
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... of TikTok link',
+                destHidden: 'Verborgen Bestemming', restore: 'Herstellen', stepLabel: 'STAP',
+                seePersonaTips: 'BEKIJK TIPS VAN JE PERSONA', mainRecommendation: 'BELANGRIJKSTE AANBEVELING',
+                orChooseBackup: 'OF KIES RESERVE CANDIDATEN', slideToRight: 'Schuif naar rechts'
             },
             af: {
                 regGiftLabel: 'SPESIALE GESKENK', regGift: 'Kry 7 gratis krediete by jou eerste registrasie',
@@ -2104,7 +2175,10 @@
                 keepRecsDesc: 'Indien gemerk, sal die AI probeer om voorheen gekose plekke in te sluit.',
                 cancel: 'KANSELLEER', buildNewRoute: 'BOU NUWE ROETE',
                 editRoutePlaceholder: 'Bv: Besoek my gunsteling plekke, of vind \'n hotel met \'n swembad...',
-                socialLinksPlaceholder: 'https://www.instagram.com/p/... of TikTok-skakel'
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... of TikTok-skakel',
+                destHidden: 'Verborge Bestemming', restore: 'Herstel', stepLabel: 'STAP',
+                seePersonaTips: 'WYK TIPS VAN JOU PERSONA', mainRecommendation: 'HOOF AANBEVELING',
+                orChooseBackup: 'OF KIES RUGSTEUN KANDIDATE', slideToRight: 'Skuif na regs'
             },
             ar: {
                 regGiftLabel: 'هدية خاصة', regGift: 'احصل على 7 أرصدة مجانية عند التسجيل لأول مرة',
@@ -2134,8 +2208,11 @@
                 keepRecsDesc: 'إذا تم تحديده، سيحاول الذكاء الاصطناعي تضمين الأماكن المختارة مسبقاً.',
                 cancel: 'إلغاء', buildNewRoute: 'إنشاء مسار جديد',
                 editRoutePlaceholder: 'مثال: زيارة أماكني المفضلة، أو البحث عن فندق به مسبح...',
-                socialLinksPlaceholder: 'رابط انستقرام أو تيك توك'
-            }
+                socialLinksPlaceholder: 'رابط انستقرام أو تيك توك',
+                destHidden: 'وجهة مخفية', restore: 'استعادة', stepLabel: 'خطوة',
+                seePersonaTips: 'عرض نصائح شخصيتك', mainRecommendation: 'التوصية الرئيسية',
+                orChooseBackup: 'أو اختر المرشحين الاحتياطيين', slideToRight: 'اسحب لليمين'
+            },
         };
 
         function updateRouteLanguage(lang) {
@@ -2190,6 +2267,7 @@
                             { "featureType": "administrative.country", "elementType": "geometry.stroke", "stylers": [{ "color": "#a0041e" }] }
                         ]
                     });
+                    updateMapTheme();
                     map = googleMap;
                     routeLayers = [];
                 } else {
@@ -2197,11 +2275,7 @@
                     if (mapEl) {
                         map = L.map('map', { zoomControl: false }).setView([-6.89, 107.61], 13);
                         L.control.zoom({ position: 'bottomright' }).addTo(map);
-                        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                            attribution: '&copy; OpenStreetMap & CARTO',
-                            subdomains: 'abcd',
-                            maxZoom: 20
-                        }).addTo(map);
+                        updateMapTheme();
                         L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
                         routeLayers = L.featureGroup().addTo(map);
                     }
