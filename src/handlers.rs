@@ -89,7 +89,7 @@ pub async fn root(
         (None, Some(user_id.as_str()))
     };
 
-    let quota = db::get_quota_status(&state.redis, db_user_ref, guest_id_ref).await
+    let quota = db::get_quota_status(&state.db, &state.redis, db_user_ref, guest_id_ref).await
         .unwrap_or(db::QuotaStatus {
             route_used: 0, route_limit: 3,
             caption_used: 0, caption_limit: 3,
@@ -494,20 +494,96 @@ pub async fn checkout(
     }
 }
 
-pub async fn payment_callback(body: axum::body::Bytes) -> impl IntoResponse {
+pub async fn payment_callback(
+    State(state): State<AppState>,
+    body: axum::body::Bytes
+) -> impl IntoResponse {
     if let Ok(payload_val) = serde_json::from_slice::<Value>(&body) {
+        tracing::info!("[WEBHOOK] Received payload: {}", payload_val);
         let event = payload_val.get("event").and_then(|e| e.as_str()).unwrap_or("");
 
         if event == "payment.received" || event == "transaction_status_updated" {
             let data = payload_val.get("data").unwrap_or(&payload_val);
             let status = data.get("status").and_then(|s| s.as_str()).unwrap_or("");
+            let reference = data.get("reference").and_then(|s| s.as_str()).unwrap_or("");
 
             if status == "SUCCESS" || status == "PAID" {
-                tracing::info!("[WEBHOOK] Payment Success received: {:?}", payload_val);
+                tracing::info!("[WEBHOOK] Processing success for ref: {}", reference);
+                
+                let mut tx = match state.db.begin().await {
+                    Ok(t) => t,
+                    Err(e) => {
+                        tracing::error!("Webhook error: Failed to start transaction: {}", e);
+                        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                    }
+                };
+
+                // 1. Fetch Topup
+                let topup = match db::find_topup_by_reference(&state.db, reference).await {
+                    Ok(Some(t)) => t,
+                    Ok(None) => {
+                        tracing::warn!("Webhook: Topup ref {} not found", reference);
+                        return StatusCode::NOT_FOUND.into_response();
+                    }
+                    Err(e) => {
+                        tracing::error!("Webhook: DB error fetching topup: {}", e);
+                        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                    }
+                };
+
+                if topup.status == "success" {
+                    tracing::info!("Webhook: Topup {} already processed", reference);
+                    return StatusCode::OK.into_response();
+                }
+
+                // 2. Determine Credits
+                let credits_to_add = match topup.tier.as_str() {
+                    "pro_pass" => 60,
+                    "basic_pass" => 10,
+                    _ => 0,
+                };
+
+                // 3. Update User
+                let user_update = sqlx::query(
+                    "UPDATE users SET credits = credits + $1, tier = $2, updated_at = NOW() WHERE id = $3"
+                )
+                .bind(credits_to_add)
+                .bind(&topup.tier)
+                .bind(topup.user_id)
+                .execute(&mut *tx)
+                .await;
+
+                if let Err(e) = user_update {
+                    let _ = tx.rollback().await;
+                    tracing::error!("Webhook: Failed to update user credits: {}", e);
+                    return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                }
+
+                // 4. Update Topup Status
+                let topup_update = sqlx::query(
+                    "UPDATE topups SET status = 'success', payload = $1, updated_at = NOW() WHERE id = $2"
+                )
+                .bind(&payload_val)
+                .bind(topup.id)
+                .execute(&mut *tx)
+                .await;
+
+                if let Err(e) = topup_update {
+                    let _ = tx.rollback().await;
+                    tracing::error!("Webhook: Failed to update topup status: {}", e);
+                    return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                }
+
+                if let Err(e) = tx.commit().await {
+                    tracing::error!("Webhook: Failed to commit transaction: {}", e);
+                    return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                }
+
+                tracing::info!("Webhook SUCCESS: Added {} credits to user {}", credits_to_add, topup.user_id);
             }
         }
     }
-    StatusCode::OK
+    StatusCode::OK.into_response()
 }
 
 // =============================================
@@ -587,7 +663,7 @@ pub async fn get_quota_status_handler(
         None
     };
 
-    match db::get_quota_status(&state.redis, db_user.as_ref(), guest_id.as_deref()).await {
+    match db::get_quota_status(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref()).await {
         Ok(status) => (StatusCode::OK, Json(QuotaResponse { success: true, status: Some(status), error: None })),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(QuotaResponse { success: false, status: None, error: Some(e) })),
     }
@@ -620,7 +696,7 @@ pub async fn consume_quota_handler(
 
     match db::check_and_consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref(), feature).await {
         Ok(true) => {
-            let status = db::get_quota_status(&state.redis, db_user.as_ref(), guest_id.as_deref()).await.ok();
+            let status = db::get_quota_status(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref()).await.ok();
             (StatusCode::OK, Json(QuotaResponse { success: true, status, error: None }))
         },
         Ok(false) => (StatusCode::FORBIDDEN, Json(QuotaResponse { success: false, status: None, error: Some("Kuota harian habis".to_string()) })),

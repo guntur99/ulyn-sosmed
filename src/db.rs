@@ -29,7 +29,7 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::Error> {
             name TEXT NOT NULL,
             picture TEXT,
             google_id TEXT,
-            credits INTEGER NOT NULL DEFAULT 10,
+            credits INTEGER NOT NULL DEFAULT 7,
             tier TEXT NOT NULL DEFAULT 'free',
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -150,6 +150,19 @@ pub struct User {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow, Clone)]
+pub struct Topup {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub amount: f64,
+    pub tier: String,
+    pub status: String,
+    pub reference: String,
+    pub payload: Option<serde_json::Value>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
 /// Cleanup guest routes older than 24 hours
 pub async fn cleanup_guest_routes(pool: &PgPool) -> Result<(), sqlx::Error> {
     sqlx::query(
@@ -213,6 +226,14 @@ pub async fn get_route_history(pool: &PgPool, user_id: &str, limit: i32) -> Resu
 
     Ok(rows)
 }
+
+/// Find a topup record by reference
+pub async fn find_topup_by_reference(pool: &PgPool, reference: &str) -> Result<Option<Topup>, sqlx::Error> {
+    sqlx::query_as::<_, Topup>("SELECT * FROM topups WHERE reference = $1")
+        .bind(reference)
+        .fetch_optional(pool)
+        .await
+}
 // --- QUOTA SYSTEM ---
 
 #[derive(Debug, Clone, Copy)]
@@ -223,77 +244,60 @@ pub enum FeatureType {
     Caption,
 }
 
-impl FeatureType {
-    fn as_str(&self) -> &'static str {
-        match self {
-            Self::Route => "route",
-            Self::Receipt => "receipt",
-            Self::Caption => "caption",
-        }
-    }
-}
 
-/// Check and consume quota for a user (guest or auth)
+/// Check and consume quota for a user (guest or auth).
+/// Now uses a lifetime credit system for users and a lifetime trial for guests.
 pub async fn check_and_consume_quota(
     pool: &sqlx::PgPool,
     redis: &redis::Client,
     user: Option<&User>,
     guest_id: Option<&str>,
-    feature: FeatureType,
+    _feature: FeatureType, // Feature logic is now unified into general credits
 ) -> Result<bool, String> {
-    let tier = user.map(|u| u.tier.as_str()).unwrap_or("guest");
-    let limit = match tier {
-        "pro_pass" => 30,
-        "basic_pass" => 15,
-        "free" => 9,
-        _ => 3,
-    };
-
-    let user_id = if let Some(u) = user {
-        u.email.clone()
-    } else if let Some(gid) = guest_id {
-        gid.to_string()
-    } else {
-        return Err("No user identification provided".into());
-    };
-
-    let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let redis_key = format!("usage:{}:{}:{}", user_id, feature.as_str(), date);
-
-    let mut conn = redis.get_multiplexed_tokio_connection().await
-        .map_err(|e| format!("Redis connection error: {}", e))?;
-
-    // Check usage in Redis
-    let current_usage: i32 = redis::cmd("GET").arg(&redis_key).query_async::<Option<i32>>(&mut conn)
-        .await
-        .map_err(|e| format!("Redis GET error: {}", e))?
-        .unwrap_or(0);
-
-    if current_usage >= limit {
-        return Ok(false);
-    }
-
-    // Increment usage in Redis
-    let _: () = redis::cmd("INCR").arg(&redis_key).query_async(&mut conn)
-        .await
-        .map_err(|e| format!("Redis INCR error: {}", e))?;
-    
-    // Set expiry if new key (24h)
-    if current_usage == 0 {
-        let _: () = redis::cmd("EXPIRE").arg(&redis_key).arg(86400).query_async(&mut conn).await.unwrap_or_default();
-    }
-
-    // If authenticated user, also decrement credits if applicable
     if let Some(u) = user {
-        if u.credits > 0 {
-            let _ = sqlx::query("UPDATE users SET credits = credits - 1 WHERE id = $1")
-                .bind(u.id)
-                .execute(pool)
-                .await;
+        // Authenticated users use credits from DB
+        let row_user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+            .bind(u.id)
+            .fetch_one(pool)
+            .await
+            .map_err(|e| format!("DB Error: {}", e))?;
+
+        if row_user.credits <= 0 {
+            return Ok(false);
         }
+
+        sqlx::query("UPDATE users SET credits = credits - 1 WHERE id = $1")
+            .bind(u.id)
+            .execute(pool)
+            .await
+            .map_err(|e| format!("DB Update Error: {}", e))?;
+        
+        return Ok(true);
+    } else if let Some(gid) = guest_id {
+        // Guests use a lifetime Redis key (no date)
+        let redis_key = format!("guest_usage:{}", gid);
+        let limit = 3;
+
+        let mut conn = redis.get_multiplexed_tokio_connection().await
+            .map_err(|e| format!("Redis connection error: {}", e))?;
+
+        let current_usage: i32 = redis::cmd("GET").arg(&redis_key).query_async::<Option<i32>>(&mut conn)
+            .await
+            .map_err(|e| format!("Redis GET error: {}", e))?
+            .unwrap_or(0);
+
+        if current_usage >= limit {
+            return Ok(false);
+        }
+
+        let _: () = redis::cmd("INCR").arg(&redis_key).query_async(&mut conn)
+            .await
+            .map_err(|e| format!("Redis INCR error: {}", e))?;
+        
+        return Ok(true);
     }
 
-    Ok(true)
+    Err("No user identification provided".into())
 }
 
 #[derive(serde::Serialize)]
@@ -306,52 +310,52 @@ pub struct QuotaStatus {
     pub receipt_limit: i32,
 }
 
-/// Get the current quota status for a user/guest
+/// Get the current quota status for a user/guest.
+/// Simplified to show remaining total credits.
 pub async fn get_quota_status(
+    pool: &sqlx::PgPool,
     redis: &redis::Client,
     user: Option<&User>,
     guest_id: Option<&str>,
 ) -> Result<QuotaStatus, String> {
-    let tier = user.map(|u| u.tier.as_str()).unwrap_or("guest");
-    
-    // Limits based on tier
-    let (route_limit, caption_limit, receipt_limit) = match tier {
-        "pro_pass" => (30, 30, 50),
-        "basic_pass" => (15, 10, 20),
-        "free" => (9, 5, 10),
-        _ => (3, 3, 3), // Guest
-    };
+    if let Some(u) = user {
+        // Authenticated user: get latest credits from DB
+        let latest: (i32,) = sqlx::query_as("SELECT credits FROM users WHERE id = $1")
+            .bind(u.id)
+            .fetch_one(pool)
+            .await
+            .map_err(|e| format!("DB query error: {}", e))?;
 
-    let user_identifier = if let Some(u) = user {
-        u.email.clone()
+        // In the new system, used/limit is per action, but we can show it as remaining
+        return Ok(QuotaStatus {
+            route_used: 0, 
+            route_limit: latest.0,
+            caption_used: 0,
+            caption_limit: latest.0,
+            receipt_used: 0,
+            receipt_limit: latest.0,
+        });
     } else if let Some(gid) = guest_id {
-        gid.to_string()
-    } else {
-        return Err("No user identification provided".into());
-    };
+        let redis_key = format!("guest_usage:{}", gid);
+        let mut conn = redis.get_multiplexed_tokio_connection().await
+            .map_err(|e| format!("Redis connection error: {}", e))?;
 
-    let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let mut conn = redis.get_multiplexed_tokio_connection().await
-        .map_err(|e| format!("Redis connection error: {}", e))?;
+        let used: i32 = redis::cmd("GET").arg(&redis_key).query_async::<Option<i32>>(&mut conn)
+            .await.unwrap_or(Some(0)).unwrap_or(0);
+        
+        let limit = 3;
 
-    let route_used: i32 = redis::cmd("GET")
-        .arg(format!("usage:{}:route:{}", user_identifier, date))
-        .query_async::<Option<i32>>(&mut conn).await.unwrap_or(Some(0)).unwrap_or(0);
-    let caption_used: i32 = redis::cmd("GET")
-        .arg(format!("usage:{}:caption:{}", user_identifier, date))
-        .query_async::<Option<i32>>(&mut conn).await.unwrap_or(Some(0)).unwrap_or(0);
-    let receipt_used: i32 = redis::cmd("GET")
-        .arg(format!("usage:{}:receipt:{}", user_identifier, date))
-        .query_async::<Option<i32>>(&mut conn).await.unwrap_or(Some(0)).unwrap_or(0);
+        return Ok(QuotaStatus {
+            route_used: used,
+            route_limit: limit,
+            caption_used: used,
+            caption_limit: limit,
+            receipt_used: used,
+            receipt_limit: limit,
+        });
+    }
 
-    Ok(QuotaStatus {
-        route_used,
-        route_limit,
-        caption_used,
-        caption_limit,
-        receipt_used,
-        receipt_limit,
-    })
+    Err("No identification".into())
 }
 /// Find a route by ID
 pub async fn find_route_by_id(pool: &PgPool, id: Uuid) -> Result<Option<serde_json::Value>, sqlx::Error> {
