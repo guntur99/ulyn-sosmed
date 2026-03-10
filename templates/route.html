@@ -583,57 +583,68 @@
                         <i class="fas fa-magic text-2xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Atur Ulang / Edit
+                        <h2 class="text-xl font-black text-slate-900 dark:text-white tracking-tight"
+                            data-i18n="editRouteTitle">Atur Ulang / Edit
                             Rute</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Punya keinginan tambahan? Biar AI
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5" data-i18n="editRouteSub">Punya
+                            keinginan tambahan? Biar AI
                             yang sesuaikan.</p>
                     </div>
                 </div>
 
                 <!-- Extra Prompt -->
                 <label
-                    class="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.18em] mb-2">Keinginan
+                    class="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.18em] mb-2"
+                    data-i18n="extraRequest">Keinginan
                     Tambahan</label>
                 <textarea id="editRoutePrompt" rows="4"
                     class="w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 p-4 text-sm font-medium focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none resize-none transition-colors"
+                    data-i18n-placeholder="editRoutePlaceholder"
                     placeholder="Contoh: Mampir ke tempat favoritmu, atau cari hotel yang ada kolam renangnya..."></textarea>
 
-                <!-- Sosmed Links -->
-                <label
-                    class="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.18em] mb-2 mt-5">Link
-                    Sosmed (Opsional)</label>
-                <input id="editRouteSosmedLinks" type="url"
-                    class="w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 px-4 py-3 text-sm font-medium focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-colors"
-                    placeholder="https://www.instagram.com/p/... atau link TikTok">
+                <div class="mt-6">
+                    <label
+                        class="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.18em] mb-2"
+                        data-i18n="socialLinks">Link
+                        Sosmed (Opsional)</label>
+                    <input type="text" id="editRouteSosmedLinks"
+                        class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 text-sm font-medium focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-colors"
+                        data-i18n-placeholder="socialLinksPlaceholder"
+                        placeholder="https://www.instagram.com/p/... atau link TikTok">
+                </div>
 
-                <!-- Keep Recommendations Checkbox -->
-                <label
-                    class="flex items-start gap-4 mt-5 p-4 rounded-2xl bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/20 cursor-pointer group">
-                    <div class="relative flex-shrink-0 mt-0.5">
-                        <input type="checkbox" id="keepRecommendations" checked class="sr-only peer">
-                        <div class="w-6 h-6 rounded-md border-2 border-rose-300 dark:border-rose-700 peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-colors flex items-center justify-center"
-                            onclick="toggleCheckbox()">
-                            <i class="fas fa-check text-white text-xs" id="checkIcon"></i>
+                <div
+                    class="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <div class="relative">
+                            <input type="checkbox" id="keepRecsCheckbox" checked class="sr-only peer"
+                                onchange="toggleKeepRecs(this.checked)">
+                            <div
+                                class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500">
+                            </div>
                         </div>
-                    </div>
-                    <div onclick="toggleCheckbox()">
-                        <p class="text-sm font-black text-slate-800 dark:text-slate-100">Pertahankan Rekomendasi Saat
-                            Ini</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">Jika dicentang, AI
-                            akan mencoba memasukkan tempat-tempat yang sudah dipilih sebelumnya (jika memungkinkan).</p>
-                    </div>
-                </label>
+                        <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider"
+                            data-i18n="keepRecommendations">Pertahankan
+                            Rekomendasi Saat Ini</span>
+                    </label>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-2 font-medium leading-relaxed"
+                        data-i18n="keepRecsDesc">
+                        Jika dicentang, AI akan mencoba memasukkan tempat-tempat yang sudah dipilih sebelumnya (jika
+                        memungkinkan).
+                    </p>
+                </div>
 
-                <!-- Action Buttons -->
-                <div class="flex gap-3 mt-7">
+                <!-- Footer Actions -->
+                <div class="mt-8 flex gap-3">
                     <button onclick="closeEditRouteModal()"
-                        class="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-sm uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                        class="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                        data-i18n="cancel">
                         BATAL
                     </button>
-                    <button onclick="submitEditRoute()" id="editRouteSubmitBtn"
-                        class="flex-1 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-2"
-                        style="background: linear-gradient(135deg, #f97316, #f43f5e)">
-                        <i class="fas fa-pencil-alt"></i> BUAT RUTE BARU
+                    <button id="editRouteSubmitBtn" onclick="submitEditRoute()"
+                        class="flex-[2] py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-blue-500 shadow-xl shadow-blue-500/10 transition-all active:scale-[0.98]"
+                        data-i18n="buildNewRoute">
+                        BUAT RUTE BARU
                     </button>
                 </div>
             </div>
@@ -651,9 +662,11 @@
                 <div class="flex justify-between items-start mb-8">
                     <div>
                         <span
-                            class="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] block mb-1">Summary
+                            class="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] block mb-1"
+                            data-i18n="summaryTrip">Summary
                             Trip</span>
-                        <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Siap
+                        <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none"
+                            data-i18n="areYouReady">Siap
                             Jalan?</h2>
                     </div>
                     <div id="modal-mode-icon-container"
@@ -665,15 +678,15 @@
                 <div class="grid grid-cols-2 gap-4 mb-8">
                     <div
                         class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50 text-center">
-                        <p
-                            class="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-widest mb-1.5">
+                        <p class="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-widest mb-1.5"
+                            data-i18n="totalStops">
                             Total Titik</p>
                         <p class="text-2xl font-black text-slate-900 dark:text-white" id="modal-total-stops">2</p>
                     </div>
                     <div
                         class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50 text-center">
-                        <p
-                            class="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-widest mb-1.5">
+                        <p class="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-widest mb-1.5"
+                            data-i18n="travelMode">
                             Mode</p>
                         <p id="modal-mode-text" class="text-2xl font-black text-slate-900 dark:text-white capitalize">
                             Mobil</p>
@@ -693,8 +706,10 @@
                         <i class="fas fa-cloud-sun-rain text-xl"></i>
                     </div>
                     <div>
-                        <p class="text-sm font-black text-slate-800 dark:text-slate-100 mb-1">Persiapan Cuaca</p>
-                        <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                        <p class="text-sm font-black text-slate-800 dark:text-slate-100 mb-1" data-i18n="weatherPrep">
+                            Persiapan Cuaca</p>
+                        <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium"
+                            data-i18n="weatherAdvice">
                             Hujan deras? Pastikan <span class="font-bold">Wiper</span> berfungsi baik. Cek tekanan ban
                             untuk hindari aquaplaning, dan jaga jarak aman.
                         </p>
@@ -731,7 +746,8 @@
                 </a>
 
                 <button onclick="closePreviewModal()"
-                    class="w-full text-center mt-6 text-[10px] font-black text-slate-400 hover:text-rose-500 uppercase tracking-[0.2em] transition-colors">
+                    class="w-full text-center mt-6 text-[10px] font-black text-slate-400 hover:text-rose-500 uppercase tracking-[0.2em] transition-colors"
+                    data-i18n="editRouteAgain">
                     EDIT RUTE LAGI
                 </button>
             </div>
@@ -1227,6 +1243,7 @@
 
             addField('prompt', finalPrompt || 'Buatkan rute perjalanan terbaik.');
             if (sosmedLinks) addField('links', sosmedLinks);
+            addField('lang', localStorage.getItem('language') || 'id');
 
             // Add Lat/Lng if user location is detected
             if (userMarker) {
@@ -1674,15 +1691,17 @@
                     totalStops.innerText = baseSteps.length + (userMarker ? 1 : 0);
                 }
 
+                const dict = routeTranslations[localStorage.getItem('language') || 'id'] || routeTranslations.id;
+
                 // Set Mode Info
                 let iconClass = 'fa-car';
-                let modeName = 'Mobil';
+                let modeName = dict.modeDriving;
                 if (currentTravelMode === 'walking') {
                     iconClass = 'fa-walking';
-                    modeName = 'Jalan';
+                    modeName = dict.modeWalking;
                 } else if (currentTravelMode === 'motorcycle') {
                     iconClass = 'fa-motorcycle';
-                    modeName = 'Motor';
+                    modeName = dict.modeMotorcycle;
                 }
 
                 if (modeText) modeText.innerText = modeName;
@@ -1762,8 +1781,8 @@
                                 <div class="absolute left-[7.5px] top-3 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800/50"></div>
                                 <div class="w-4 h-4 rounded-full bg-blue-500 mt-1 flex-shrink-0 z-10 ring-4 ring-white dark:ring-slate-900 shadow-sm border-2 border-white dark:border-slate-900"></div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">LOKASI KAMU</p>
-                                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Titik Keberangkatan</p>
+                                    <p class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">${dict.userLocation}</p>
+                                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">${dict.startingPoint}</p>
                                 </div>
                             </div>`;
                     }
@@ -1771,8 +1790,8 @@
                     if (baseSteps && baseSteps.length > 0) {
                         baseSteps.forEach((step, i) => {
                             const isLast = i === baseSteps.length - 1;
-                            const title = step.location_name || step.name || "Tujuan " + (i + 1);
-                            const desc = step.address || step.category || 'Destinasi Perjalanan';
+                            const title = step.location_name || step.name || (dict.receiptDest + " " + (i + 1));
+                            const desc = step.address || step.category || (dict.receiptService || 'Destinasi Perjalanan');
                             timelineHtml += `
                                 <div class="flex gap-4 relative ${isLast ? '' : 'pb-8'}">
                                     ${isLast ? '' : '<div class="absolute left-[7.5px] top-3 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800/50"></div>'}
@@ -1848,222 +1867,274 @@
         // Language Logic
         const routeTranslations = {
             id: {
-                regGiftLabel: 'HADIAH SPESIAL',
-                regGift: 'Dapatkan 7 Kredit Gratis Saat Pertama Daftar',
-                routeBack: 'Kembali',
-                routeTranslateLabel: 'ITINERARY PILIHAN',
-                routeStartLoc: 'Titik Keberangkatan',
-                routeFound: 'Lokasi terdeteksi (Siap meluncur!)',
-                routeGoBtn: 'Siap Berangkat Sekarang!',
-                shareTitle: 'Share ke Sosmed 🚀',
-                tabVisual: 'Visual Receipt',
-                tabCaption: 'Viral Caption',
+                regGiftLabel: 'HADIAH SPESIAL', regGift: 'Dapatkan 7 Kredit Gratis Saat Pertama Daftar',
+                routeBack: 'Kembali', routeTranslateLabel: 'ITINERARY PILIHAN', routeStartLoc: 'Titik Keberangkatan',
+                routeFound: 'Lokasi terdeteksi (Siap meluncur!)', routeGoBtn: 'Siap Berangkat Sekarang!',
+                shareTitle: 'Share ke Sosmed 🚀', tabVisual: 'Visual Receipt', tabCaption: 'Viral Caption',
                 receiptDesc: 'Bagikan "Struk Perjalananan" estetik ini ke Instagram Story atau X!',
-                saveImage: 'Simpan Gambar',
-                chooseVibe: 'Pilih Vibes Caption',
-                genCaption: 'Buatkan Caption Viral',
+                saveImage: 'Simpan Gambar', chooseVibe: 'Pilih Vibes Caption', genCaption: 'Buatkan Caption Viral',
                 captionPlaceholder: 'Caption akan muncul di sini...',
-                vibeFlex: '✨ Flexing (Insta)',
-                vibeFlexDesc: 'Pendek, aesthetic, cool',
-                vibeStory: '🧵 Storytime (X)',
-                vibeStoryDesc: 'Engaging, thread-style',
-                vibeWitty: '😎 Witty/Lucu',
-                vibeWittyDesc: 'Santai, agak receh',
-                vibeHealing: '🍃 Healing (Soft)',
-                vibeHealingDesc: 'Deep, emosional, senja',
-                genVisual: 'Generating Visual...',
-                receiptItinerary: 'Itinerary Slip',
-                receiptDate: 'Date',
-                receiptRef: 'Ref No',
-                receiptCost: 'COST',
-                receiptQty: 'QTY',
-                receiptDest: 'DESTINATION / ACTIVITY',
-                receiptThanks: 'Thank You!',
-                receiptService: 'LAYANAN',
-                estBiayaLabel: 'ESTIMASI BIAYA',
-                estBiayaDesc: 'Per orang (Tiket + Makan)',
-                openMapsBtn: 'BUKA GOOGLE MAPS'
+                vibeFlex: '✨ Flexing (Insta)', vibeFlexDesc: 'Pendek, aesthetic, cool',
+                vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Engaging, thread-style',
+                vibeWitty: '😎 Witty/Lucu', vibeWittyDesc: 'Santai, agak receh',
+                vibeHealing: '🍃 Healing (Soft)', vibeHealingDesc: 'Deep, emosional, senja',
+                genVisual: 'Generating Visual...', receiptItinerary: 'Itinerary Slip',
+                receiptDate: 'Date', receiptRef: 'Ref No', receiptCost: 'COST', receiptQty: 'QTY',
+                receiptDest: 'DESTINATION / ACTIVITY', receiptThanks: 'Thank You!', receiptService: 'LAYANAN',
+                estBiayaLabel: 'ESTIMASI BIAYA', estBiayaDesc: 'Per orang (Tiket + Makan)', openMapsBtn: 'BUKA GOOGLE MAPS',
+                summaryTrip: 'Summary Trip', areYouReady: 'Siap Jalan?', totalStops: 'Total Titik', travelMode: 'Mode',
+                modeDriving: 'Mobil', modeMotorcycle: 'Motor', modeWalking: 'Jalan Kaki',
+                userLocation: 'LOKASI KAMU', startingPoint: 'Titik Keberangkatan',
+                weatherPrep: 'Persiapan Cuaca',
+                weatherAdvice: 'Hujan deras? Pastikan Wiper berfungsi baik. Cek tekanan ban untuk hindari aquaplaning, dan jaga jarak aman.',
+                editRouteAgain: 'EDIT RUTE LAGI', editRouteTitle: 'Atur Ulang / Edit Rute',
+                editRouteSub: 'Punya keinginan tambahan? Biar AI yang sesuaikan.',
+                extraRequest: 'Keinginan Tambahan', socialLinks: 'Link Sosmed (Opsional)',
+                keepRecommendations: 'Pertahankan Rekomendasi Saat Ini',
+                keepRecsDesc: 'Jika dicentang, AI akan mencoba memasukkan tempat-tempat yang sudah dipilih sebelumnya.',
+                cancel: 'BATAL', buildNewRoute: 'BUAT RUTE BARU',
+                editRoutePlaceholder: 'Contoh: Mampir ke tempat favoritmu, atau cari hotel yang ada kolam renangnya...',
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... atau link TikTok'
             },
             en: {
-                regGiftLabel: 'SPECIAL GIFT',
-                regGift: 'Get 7 Free Credits on Your First Registration',
-                routeBack: 'Back',
-                routeTranslateLabel: 'CURATED ITINERARY',
-                routeStartLoc: 'Starting Point',
-                routeFound: 'Location detected (Ready to go!)',
-                routeGoBtn: 'Ready to Depart Now!',
-                shareTitle: 'Share to Socials 🚀',
-                tabVisual: 'Visual Receipt',
-                tabCaption: 'Viral Caption',
+                regGiftLabel: 'SPECIAL GIFT', regGift: 'Get 7 Free Credits on Your First Registration',
+                routeBack: 'Back', routeTranslateLabel: 'CURATED ITINERARY', routeStartLoc: 'Starting Point',
+                routeFound: 'Location detected (Ready to go!)', routeGoBtn: 'Ready to Depart Now!',
+                shareTitle: 'Share to Socials 🚀', tabVisual: 'Visual Receipt', tabCaption: 'Viral Caption',
                 receiptDesc: 'Share this aesthetic "Travel Receipt" to Instagram Story or X!',
-                saveImage: 'Save Image',
-                chooseVibe: 'Choose Caption Vibe',
-                genCaption: 'Generate Viral Caption',
+                saveImage: 'Save Image', chooseVibe: 'Choose Caption Vibe', genCaption: 'Generate Viral Caption',
                 captionPlaceholder: 'Caption will appear here...',
-                vibeFlex: '✨ Flexing (Insta)',
-                vibeFlexDesc: 'Short, aesthetic, cool',
-                vibeStory: '🧵 Storytime (X)',
-                vibeStoryDesc: 'Engaging, thread-style',
-                vibeWitty: '😎 Witty/Funny',
-                vibeWittyDesc: 'Relaxed, a bit witty',
-                vibeHealing: '🍃 Healing (Soft)',
-                vibeHealingDesc: 'Deep, emotional, soft',
-                genVisual: 'Generating Visual...',
-                receiptItinerary: 'Itinerary Slip',
-                receiptDate: 'Date',
-                receiptRef: 'Ref No',
-                receiptCost: 'COST',
-                receiptQty: 'QTY',
-                receiptDest: 'DESTINATION / ACTIVITY',
-                receiptThanks: 'Thank You!',
-                receiptService: 'SERVICE',
-                estBiayaLabel: 'ESTIMATED COST',
-                estBiayaDesc: 'Per person (Tickets + Food)',
-                openMapsBtn: 'OPEN GOOGLE MAPS'
-            },
-            es: {
-                regGiftLabel: 'REGALO ESPECIAL',
-                regGift: 'Obtén 7 créditos gratis al registrarte por primera vez',
-                routeBack: 'Volver', routeTranslateLabel: 'ITINERARIO CURADO', routeStartLoc: 'Punto de partida', routeFound: 'Ubicación detectada (¡Listo para ir!)', routeGoBtn: '¡Listo para partir ahora!',
-                shareTitle: 'Compartir en redes 🚀', tabVisual: 'Recibo visual', tabCaption: 'Subtítulo viral',
-                receiptDesc: '¡Comparte este "Recibo de viaje" estético en Instagram Story o X!', saveImage: 'Guardar imagen',
-                chooseVibe: 'Elegir vibración', genCaption: 'Generar subtítulo viral', captionPlaceholder: 'El subtítulo aparecerá aquí...',
-                vibeFlex: '✨ Flexing (Insta)', vibeFlexDesc: 'Corto, estético, genial',
-                vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Atractivo, estilo hilo',
-                vibeWitty: '😎 Ingenioso/Divertido', vibeWittyDesc: 'Relajado, un poco ingenioso',
-                vibeHealing: '🍃 Healing (Suave)', vibeHealingDesc: 'Profundo, emocional, suave',
-                genVisual: 'Generando visual...', receiptItinerary: 'Hoja de itinerario', receiptDate: 'Fecha', receiptRef: 'Nº Ref', receiptCost: 'COSTO',
-                receiptQty: 'CANT', receiptDest: 'DESTINO / ACTIVIDAD',
-                receiptThanks: '¡Gracias!', receiptService: 'SERVICIO',
-                estBiayaLabel: 'COSTO ESTIMADO', estBiayaDesc: 'Por persona (Tickets + Comida)', openMapsBtn: 'ABRIR GOOGLE MAPS'
-            },
-            fr: {
-                regGiftLabel: 'CADEAU SPÉCIAL',
-                regGift: 'Obtenez 7 crédits gratuits lors de votre première inscription',
-                routeBack: 'Retour', routeTranslateLabel: 'ITINÉRAIRE', routeStartLoc: 'Point de départ', routeFound: 'Emplacement détecté', routeGoBtn: 'Prêt à partir maintenant !',
-                shareTitle: 'Partager 🚀', tabVisual: 'Reçu visuel', tabCaption: 'Légende virale',
-                receiptDesc: 'Partagez ce « reçu de voyage » esthétique en story Instagram ou sur X !', saveImage: 'Enregistrer',
-                chooseVibe: 'Choisir l\'ambiance', genCaption: 'Générer une légende', captionPlaceholder: 'La légende apparaîtra ici...',
-                vibeFlex: '✨ Flexing (Insta)', vibeFlexDesc: 'Court, esthétique, cool',
-                vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Engageant, style thread',
-                vibeWitty: '😎 Spirituel/Drôle', vibeWittyDesc: 'Décontracté, un peu spirituel',
-                vibeHealing: '🍃 Healing (Doux)', vibeHealingDesc: 'Profond, émotionnel, doux',
-                genVisual: 'Génération visuelle...', receiptItinerary: 'Fiche d\'itinéraire', receiptDate: 'Date', receiptRef: 'Réf No', receiptCost: 'COÛT',
-                receiptQty: 'QTÉ', receiptDest: 'DESTINATION / ACTIVITÉ',
-                receiptThanks: 'Merci !', receiptService: 'SERVICE',
-                estBiayaLabel: 'COÛT ESTIMÉ', estBiayaDesc: 'Par personne (Tickets + Repas)', openMapsBtn: 'OUVRIR GOOGLE MAPS'
+                vibeFlex: '✨ Flexing (Insta)', vibeFlexDesc: 'Short, aesthetic, cool',
+                vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Engaging, thread-style',
+                vibeWitty: '😎 Witty/Funny', vibeWittyDesc: 'Relaxed, a bit witty',
+                vibeHealing: '🍃 Healing (Soft)', vibeHealingDesc: 'Deep, emotional, soft',
+                genVisual: 'Generating Visual...', receiptItinerary: 'Itinerary Slip',
+                receiptDate: 'Date', receiptRef: 'Ref No', receiptCost: 'COST', receiptQty: 'QTY',
+                receiptDest: 'DESTINATION / ACTIVITY', receiptThanks: 'Thank You!', receiptService: 'SERVICE',
+                estBiayaLabel: 'ESTIMATED COST', estBiayaDesc: 'Per person (Tickets + Food)', openMapsBtn: 'OPEN GOOGLE MAPS',
+                summaryTrip: 'Trip Summary', areYouReady: 'Ready to Go?', totalStops: 'Total Stops', travelMode: 'Mode',
+                modeDriving: 'Driving', modeMotorcycle: 'Motorcycle', modeWalking: 'Walking',
+                userLocation: 'YOUR LOCATION', startingPoint: 'Starting Point',
+                weatherPrep: 'Weather Prep',
+                weatherAdvice: 'Heavy rain? Ensure wipers work well. Check tire pressure to avoid aquaplaning, and keep a safe distance.',
+                editRouteAgain: 'EDIT ROUTE AGAIN', editRouteTitle: 'Reset / Edit Route',
+                editRouteSub: 'Have extra requests? Let AI adjust it.',
+                extraRequest: 'Extra Request', socialLinks: 'Social Links (Optional)',
+                keepRecommendations: 'Keep Current Recommendations',
+                keepRecsDesc: 'If checked, AI will try to include previously selected places.',
+                cancel: 'CANCEL', buildNewRoute: 'BUILD NEW ROUTE',
+                editRoutePlaceholder: 'Ex: Visit my favorite spots, or find a hotel with a pool...',
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... or TikTok link'
             },
             ja: {
-                regGiftLabel: 'スペシャルギフト',
-                regGift: '初回登録で7つの無料クレジットをゲット',
-                routeBack: '戻る', routeTranslateLabel: '厳選された旅程', routeStartLoc: '出発点', routeFound: '位置を検出しました', routeGoBtn: '今すぐ出発する！',
+                regGiftLabel: 'スペシャルギフト', regGift: '初回登録で7つの無料クレジットをゲット',
+                routeBack: '戻る', routeTranslateLabel: '厳選された旅程', routeStartLoc: '出発点',
+                routeFound: '位置を検出しました (出発準備完了！)', routeGoBtn: '今すぐ出発する！',
                 shareTitle: 'SNSでシェア 🚀', tabVisual: 'ビジュアルレシート', tabCaption: 'バイラルキャプション',
-                receiptDesc: 'このエステティックな「トラベルレシート」をInstagramストーリーズやXでシェアしましょう！', saveImage: '画像を保存',
-                chooseVibe: 'キャプション의 雰囲気を選択', genCaption: 'バイラルキャプションを作成', captionPlaceholder: 'キャプションがここに表示されます...',
+                receiptDesc: 'このエステティックな「トラベルレシート」をInstagramストーリーズやXでシェアしましょう！',
+                saveImage: '画像を保存', chooseVibe: 'キャプションの雰囲気を選択', genCaption: 'バイラルキャプションを作成',
+                captionPlaceholder: 'キャプションがここに表示されます...',
                 vibeFlex: '✨ フレックス (Insta)', vibeFlexDesc: '短く、エステティックで、クール',
                 vibeStory: '🧵 ストーリータイム (X)', vibeStoryDesc: '魅力的、スレッド形式',
                 vibeWitty: '😎 ウィット/面白い', vibeWittyDesc: 'リラックスした、少しウィットに富んだ',
                 vibeHealing: '🍃 ヒーリング (ソフト)', vibeHealingDesc: '深い、感情的、ソフト',
-                genVisual: 'ビジュアルを生成中...', receiptItinerary: '旅程伝票', receiptDate: '日付', receiptRef: '参照番号', receiptCost: '費用',
-                receiptQty: '数量', receiptDest: '目的地 / アクティビティ',
-                receiptThanks: 'ありがとうございました！', receiptService: 'サービス',
-                estBiayaLabel: '見積もり費用', estBiayaDesc: '一人当たり（チケット＋食事）', openMapsBtn: 'Googleマップを開く'
+                genVisual: 'ビジュアルを生成中...', receiptItinerary: '旅程伝票',
+                receiptDate: '日付', receiptRef: '参照番号', receiptCost: '費用', receiptQty: '数量',
+                receiptDest: '目的地 / アクティビティ', receiptThanks: 'ありがとうございました！', receiptService: 'サービス',
+                estBiayaLabel: '見積もり費用', estBiayaDesc: '一人当たり（チケット＋食事）', openMapsBtn: 'Googleマップを開く',
+                summaryTrip: 'トリップ概要', areYouReady: '準備はいいですか？', totalStops: '合計地点数', travelMode: 'モード',
+                modeDriving: '車', modeMotorcycle: 'バイク', modeWalking: '徒歩',
+                userLocation: '現在地', startingPoint: '出発点',
+                weatherPrep: '天気の準備',
+                weatherAdvice: '大雨ですか？ワイパーが正常に作動することを確認してください。ハイドロプレーニング現象を避けるためにタイヤの空気圧をチェックし、安全な距離を保ってください。',
+                editRouteAgain: 'ルートを再編集', editRouteTitle: 'ルートのリセット / 編集',
+                editRouteSub: '追加のご要望はありますか？AIが調整します。',
+                extraRequest: '追加のリクエスト', socialLinks: 'SNSリンク（任意）',
+                keepRecommendations: '現在の推奨事項を保持する',
+                keepRecsDesc: 'チェックを入れると、AIは以前に選択した場所を含めようとします。',
+                cancel: 'キャンセル', buildNewRoute: '新しいルートを作成',
+                editRoutePlaceholder: '例：お気に入りの場所を訪れる、またはプールのあるホテルを探す...',
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... または TikTokリンク'
             },
             ko: {
-                regGiftLabel: '특별 선물',
-                regGift: '첫 회원가입 시 7개 무료 크레딧 증정',
-                routeBack: '뒤로가기', routeTranslateLabel: '추천 일정', routeStartLoc: '출발지', routeFound: '위치 확인됨 (출발 준비 완료!)', routeGoBtn: '지금 출발할 준비 완료!',
+                regGiftLabel: '특별 선물', regGift: '첫 회원가입 시 7개 무료 크레딧 증정',
+                routeBack: '뒤로가기', routeTranslateLabel: '추천 일정', routeStartLoc: '출발지',
+                routeFound: '위치 확인됨 (출발 준비 완료!)', routeGoBtn: '지금 출발할 준비 완료!',
                 shareTitle: '소셜에 공유하기 🚀', tabVisual: '비주얼 영수증', tabCaption: '바이럴 캡션',
-                receiptDesc: '이 감각적인 "여행 영수증"을 인스타그램 스토리나 X에 공유해보세요!', saveImage: '이미지 저장',
-                chooseVibe: '캡션 분위기 선택', genCaption: '바이럴 캡션 생성', captionPlaceholder: '캡션이 여기에 나타납니다...',
+                receiptDesc: '이 감각적인 "여행 영수증"을 인스타그램 스토리나 X에 공유해보세요!',
+                saveImage: '이미지 저장', chooseVibe: '캡션 분위기 선택', genCaption: '바이럴 캡션 생성',
+                captionPlaceholder: '캡션이 여기에 나타납니다...',
                 vibeFlex: '✨ 플렉스 (Insta)', vibeFlexDesc: '짧고 감각적이며 멋진',
                 vibeStory: '🧵 스토리타임 (X)', vibeStoryDesc: '매력적인 스레드 스타일',
                 vibeWitty: '😎 재치/웃음', vibeWittyDesc: '편안하고 약간 재치 있는',
                 vibeHealing: '🍃 힐링 (소프트)', vibeHealingDesc: '깊고 감성적이며 부드러운',
-                genVisual: '비주얼 생성 중...', receiptItinerary: '여행 명세서', receiptDate: '날짜', receiptRef: '참조 번호', receiptCost: '비용',
-                receiptQty: '수량', receiptDest: '목적지 / 활동',
-                receiptThanks: '감사합니다!', receiptService: '서비스',
-                estBiayaLabel: '예상 비용', estBiayaDesc: '1인당 (티켓 + 식사)', openMapsBtn: '구글 지도 열기'
+                genVisual: '비주얼 생성 중...', receiptItinerary: '여행 명세서',
+                receiptDate: '날짜', receiptRef: '참조 번호', receiptCost: '비용', receiptQty: '수량',
+                receiptDest: '목적지 / 활동', receiptThanks: '감사합니다!', receiptService: '서비스',
+                estBiayaLabel: '예상 비용', estBiayaDesc: '1인당 (티켓 + 식사)', openMapsBtn: '구글 지도 열기',
+                summaryTrip: '여행 요약', areYouReady: '준비되셨나요?', totalStops: '총 지점', travelMode: '모드',
+                modeDriving: '자동차', modeMotorcycle: '오토바이', modeWalking: '도보',
+                userLocation: '내 위치', startingPoint: '출발 지점',
+                weatherPrep: '날씨 준비',
+                weatherAdvice: '폭우가 내리나요? 와이퍼가 잘 작동하는지 확인하세요. 수막현상을 방지하기 위해 타이어 공기압을 체크하고 안전 거리를 유지하세요.',
+                editRouteAgain: '경로 다시 편집', editRouteTitle: '경로 재설정 / 편집',
+                editRouteSub: '추가 요청 사항이 있나요? AI가 조정해 드립니다.',
+                extraRequest: '추가 요청', socialLinks: '소셜 링크 (선택)',
+                keepRecommendations: '현재 권장 사항 유지',
+                keepRecsDesc: '선택하면 AI가 이전에 선택한 장소를 포함하려고 시도합니다.',
+                cancel: '취소', buildNewRoute: '새 경로 생성',
+                editRoutePlaceholder: '예: 제가 좋아하는 장소를 방문하거나 수영장이 있는 호텔을 찾아주세요...',
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... 또는 틱톡 링크'
             },
             zh: {
-                regGiftLabel: '特别礼品',
-                regGift: '首次注册即可获赠 7 个免费积分',
-                routeBack: '返回', routeTranslateLabel: '精选行程', routeStartLoc: '出发点', routeFound: '检测到位置，准备出发！', routeGoBtn: '准备好出发了！',
+                regGiftLabel: '特别礼品', regGift: '首次注册即可获赠 7 个免费积分',
+                routeBack: '返回', routeTranslateLabel: '精选行程', routeStartLoc: '出发点',
+                routeFound: '检测到位置 (准备出发！)', routeGoBtn: '准备好出发了！',
                 shareTitle: '分享到社交媒体 🚀', tabVisual: '可视化收据', tabCaption: '热门文案',
-                receiptDesc: '将这张精美的“旅行收据”分享到 Instagram Story 或 X！', saveImage: '保存图片',
-                chooseVibe: '选择文案风格', genCaption: '生成热门文案', captionPlaceholder: '文案将显示在这里...',
+                receiptDesc: '将这张精美的“旅行收据”分享到 Instagram Story 或 X！',
+                saveImage: '保存图片', chooseVibe: '选择文案风格', genCaption: '生成热门文案',
+                captionPlaceholder: '文案将显示在这里...',
                 vibeFlex: '✨ 炫耀 (Insta)', vibeFlexDesc: '短小、精美、酷炫',
                 vibeStory: '🧵 讲故事 (X)', vibeStoryDesc: '引人入胜、推文式风格',
                 vibeWitty: '😎 幽默/有趣', vibeWittyDesc: '轻松、有点俏皮',
                 vibeHealing: '🍃 治愈 (柔和)', vibeHealingDesc: '深沉、情感、柔和',
-                genVisual: '正在生成可视化图片...', receiptItinerary: '行程单', receiptDate: '日期', receiptRef: '参考编号', receiptCost: '费用',
-                receiptQty: '数量', receiptDest: '目的地 / 活动',
-                receiptThanks: '谢谢！', receiptService: '服务',
-                estBiayaLabel: '预估费用', estBiayaDesc: '每人（门票 + 餐饮）', openMapsBtn: '打开谷歌地图'
+                genVisual: '正在生成可视化图片...', receiptItinerary: '行程单',
+                receiptDate: '日期', receiptRef: '参考编号', receiptCost: '费用', receiptQty: '数量',
+                receiptDest: '目的地 / 活动', receiptThanks: '谢谢！', receiptService: '服务',
+                estBiayaLabel: '预估费用', estBiayaDesc: '每人（门票 + 餐饮）', openMapsBtn: '打开谷歌地图',
+                summaryTrip: '旅行摘要', areYouReady: '准备好出发了吗？', totalStops: '总站点', travelMode: '模式',
+                modeDriving: '驾车', modeMotorcycle: '摩托车', modeWalking: '步行',
+                userLocation: '您的位置', startingPoint: '出发点',
+                weatherPrep: '天气准备',
+                weatherAdvice: '大雨？确保雨刷工作正常。检查轮胎气压以避免水滑现象，并保持安全距离。',
+                editRouteAgain: '再次编辑路线', editRouteTitle: '重置 / 编辑路线',
+                editRouteSub: '有额外要求？让 AI 为您调整。',
+                extraRequest: '额外要求', socialLinks: '社交链接（可选）',
+                keepRecommendations: '保留当前推荐',
+                keepRecsDesc: '如果选中，AI 将尝试包含之前选择的地点。',
+                cancel: '取消', buildNewRoute: '创建新路线',
+                editRoutePlaceholder: '例如：去我最喜欢的地方，或者找一个带泳池的酒店...',
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... 或 TikTok 链接'
             },
             ru: {
-                regGiftLabel: 'СПЕЦИАЛЬНЫЙ ПОДАРОК',
-                regGift: 'Получите 7 бесплатных кредитов при первой регистрации',
-                routeBack: 'Назад', routeTranslateLabel: 'ВАШ МАРШРУТ', routeStartLoc: 'Точка Отправления', routeFound: 'Местоположение определено', routeGoBtn: 'Готовы к отправлению!',
+                regGiftLabel: 'СПЕЦИАЛЬНЫЙ ПОДАРОК', regGift: 'Получите 7 бесплатных кредитов при первой регистрации',
+                routeBack: 'Назад', routeTranslateLabel: 'ВАШ МАРШРУТ', routeStartLoc: 'Точка Отправления',
+                routeFound: 'Местоположение определено (Готовы!)', routeGoBtn: 'Готовы к отправлению!',
                 shareTitle: 'Поделиться 🚀', tabVisual: 'Визуальный Чек', tabCaption: 'Виральный Заголовок',
-                receiptDesc: 'Поделитесь этим эстетичным "Тревел-чеком" в Instagram или X!', saveImage: 'Сохранить',
-                chooseVibe: 'Выберите Настроение', genCaption: 'Создать Заголовок', captionPlaceholder: 'Заголовок появится здесь...',
+                receiptDesc: 'Поделитесь этим эстетичным "Тревел-чеком" в Instagram или X!',
+                saveImage: 'Сохранить', chooseVibe: 'Выберите Настроение', genCaption: 'Создать Заголовок',
+                captionPlaceholder: 'Заголовок появится здесь...',
                 vibeFlex: '✨ Флекс (Insta)', vibeFlexDesc: 'Коротко, эстетично, круто',
                 vibeStory: '🧵 История (X)', vibeStoryDesc: 'Вовлекающе, в стиле треда',
                 vibeWitty: '😎 Остроумно', vibeWittyDesc: 'Расслабленно, с юмором',
                 vibeHealing: '🍃 Хилинг (Мягко)', vibeHealingDesc: 'Глубоко, эмоционально',
-                genVisual: 'Генерация...', receiptItinerary: 'Маршрутный Лист', receiptDate: 'Дата', receiptRef: '№ Реф', receiptCost: 'ЦЕНА',
-                receiptQty: 'КОЛ-ВО', receiptDest: 'МЕСТО / АКТИВНОСТЬ',
-                receiptThanks: 'Спасибо!', receiptService: 'СЕРВИС',
-                estBiayaLabel: 'ОЦЕНКА ЗАТРАТ', estBiayaDesc: 'На человека (Билеты + Еда)', openMapsBtn: 'ОТКРЫТЬ GOOGLE MAPS'
+                genVisual: 'Генерация...', receiptItinerary: 'Маршрутный Лист',
+                receiptDate: 'Дата', receiptRef: '№ Реф', receiptCost: 'ЦЕНА', receiptQty: 'КОЛ-ВО',
+                receiptDest: 'МЕСТО / АКТИВНОСТЬ', receiptThanks: 'Спасибо!', receiptService: 'СЕРВИС',
+                estBiayaLabel: 'ОЦЕНКА ЗАТРАТ', estBiayaDesc: 'На человека (Билеты + Еда)', openMapsBtn: 'ОТКРЫТЬ GOOGLE MAPS',
+                summaryTrip: 'Сводка поездки', areYouReady: 'Готовы ехать?', totalStops: 'Всего точек', travelMode: 'Режим',
+                modeDriving: 'Машина', modeMotorcycle: 'Мотоцикл', modeWalking: 'Пешком',
+                userLocation: 'ВАШЕ МЕСТОПОЛОЖЕНИЕ', startingPoint: 'Точка отправления',
+                weatherPrep: 'Подготовка к погоде',
+                weatherAdvice: 'Сильный дождь? Убедитесь, что дворники работают исправно. Проверьте давление в шинах, чтобы избежать аквапланирования, и соблюдайте дистанцию.',
+                editRouteAgain: 'РЕДАКТИРОВАТЬ СНОВА', editRouteTitle: 'Сбросить / Изменить маршрут',
+                editRouteSub: 'Есть особые пожелания? Пусть ИИ настроит их.',
+                extraRequest: 'Дополнительный запрос', socialLinks: 'Ссылки на соцсети (опционально)',
+                keepRecommendations: 'Сохранить текущие рекомендации',
+                keepRecsDesc: 'Если выбрано, ИИ постарается включить ранее выбранные места.',
+                cancel: 'ОТМЕНА', buildNewRoute: 'СОЗДАТЬ НОВЫЙ МАРШРУТ',
+                editRoutePlaceholder: 'Пример: Посетить мои любимые места или найти отель с бассейном...',
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... или ссылка на TikTok'
             },
             nl: {
-                regGiftLabel: 'SPECIALE CADEAU',
-                regGift: 'Ontvang 7 gratis credits bij je eerste registratie',
-                routeBack: 'Terug', routeTranslateLabel: 'GEKOZEN ROUTE', routeStartLoc: 'Vertrekpunt', routeFound: 'Locatie gedetecteerd', routeGoBtn: 'Klaar om te Gaan!',
+                regGiftLabel: 'SPECIALE CADEAU', regGift: 'Ontvang 7 gratis credits bij je eerste registratie',
+                routeBack: 'Terug', routeTranslateLabel: 'GEKOZEN ROUTE', routeStartLoc: 'Vertrekpunt',
+                routeFound: 'Locatie gedetecteerd (Klaar om te gaan!)', routeGoBtn: 'Klaar om te Gaan!',
                 shareTitle: 'Deel op Socials 🚀', tabVisual: 'Visueel Bonnetje', tabCaption: 'Virale Bijschrift',
-                receiptDesc: 'Deel dit esthetische "Reisbonnetje" op Instagram Story of X!', saveImage: 'Afbeelding Opslaan',
-                chooseVibe: 'Kies Bijschrift Vibe', genCaption: 'Genereer Virale Bijschrift', captionPlaceholder: 'Bijschrift verschijnt hier...',
+                receiptDesc: 'Deel dit esthetische "Reisbonnetje" op Instagram Story of X!',
+                saveImage: 'Afbeelding Opslaan', chooseVibe: 'Kies Bijschrift Vibe', genCaption: 'Genereer Virale Bijschrift',
+                captionPlaceholder: 'Bijschrift verschijnt hier...',
                 vibeFlex: '✨ Flexen (Insta)', vibeFlexDesc: 'Kort, estethisch, cool',
                 vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Boeiend, thread-stijl',
                 vibeWitty: '😎 Geestig/Grappig', vibeWittyDesc: 'Ontspannen, beetje gevat',
                 vibeHealing: '🍃 Healing (Zacht)', vibeHealingDesc: 'Diep, emotioneel, zacht',
-                genVisual: 'Visual Genereren...', receiptItinerary: 'Reisbon', receiptDate: 'Datum', receiptRef: 'Ref Nr', receiptCost: 'KOSTEN',
-                receiptQty: 'AANT', receiptDest: 'BESTEMMING / ACTIVITEIT',
-                receiptThanks: 'Bedankt!', receiptService: 'SERVICE',
-                estBiayaLabel: 'GESCHATTE KOSTEN', estBiayaDesc: 'Per persoon (Tickets + Eten)', openMapsBtn: 'OPEN GOOGLE MAPS'
+                genVisual: 'Visual Genereren...', receiptItinerary: 'Reisbon',
+                receiptDate: 'Datum', receiptRef: 'Ref Nr', receiptCost: 'KOSTEN', receiptQty: 'AANT',
+                receiptDest: 'BESTEMMING / ACTIVITEIT', receiptThanks: 'Bedankt!', receiptService: 'SERVICE',
+                estBiayaLabel: 'GESCHATTE KOSTEN', estBiayaDesc: 'Per persoon (Tickets + Eten)', openMapsBtn: 'OPEN GOOGLE MAPS',
+                summaryTrip: 'Reisoverzicht', areYouReady: 'Klaar om te gaan?', totalStops: 'Totaal aantal stops', travelMode: 'Mode',
+                modeDriving: 'Auto', modeMotorcycle: 'Motor', modeWalking: 'Lopen',
+                userLocation: 'JE LOCATIE', startingPoint: 'Vertrekpunt',
+                weatherPrep: 'Voorbereiding op het weer',
+                weatherAdvice: 'Zware regen? Zorg dat de ruitenwissers goed werken. Controleer de bandenspanning om aquaplaning te voorkomen en houd afstand.',
+                editRouteAgain: 'ROUTE OPNIEUW BEWERKEN', editRouteTitle: 'Route resetten / bewerken',
+                editRouteSub: 'Extra wensen? Laat de AI het aanpassen.',
+                extraRequest: 'Extra verzoek', socialLinks: 'Social media links (optioneel)',
+                keepRecommendations: 'Huidige aanbevelingen behouden',
+                keepRecsDesc: 'Indien aangevinkt, zal de AI proberen eerder geselecteerde plaatsen op te nemen.',
+                cancel: 'ANNULEREN', buildNewRoute: 'NIEUWE ROUTE MAAKEN',
+                editRoutePlaceholder: 'Bijv: Bezoek mijn favoriete plekken, of zoek een hotel met zwembad...',
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... of TikTok link'
             },
             af: {
-                regGiftLabel: 'SPESIALE GESKENK',
-                regGift: 'Kry 7 gratis krediete by jou eerste registrasie',
-                routeBack: 'Terug', routeTranslateLabel: 'GEKOSE ROETE', routeStartLoc: 'Vertrekpunt', routeFound: 'Ligging opgespoor', routeGoBtn: 'Gereed om te Vertrek!',
+                regGiftLabel: 'SPESIALE GESKENK', regGift: 'Kry 7 gratis krediete by jou eerste registrasie',
+                routeBack: 'Terug', routeTranslateLabel: 'GEKOSE ROETE', routeStartLoc: 'Vertrekpunt',
+                routeFound: 'Ligging opgespoor (Gereed om te gaan!)', routeGoBtn: 'Gereed om te Vertrek!',
                 shareTitle: 'Deel op Sosiale Media 🚀', tabVisual: 'Visuele Kwitansie', tabCaption: 'Virale Byskrif',
-                receiptDesc: 'Deel hierdie estetiese "Reis-kwitansie" op Instagram Story of X!', saveImage: 'Stoor Beeld',
-                chooseVibe: 'Kies Byskrif-vibe', genCaption: 'Maak Virale Byskrif', captionPlaceholder: 'Byskrif sal hier verskyn...',
+                receiptDesc: 'Deel hierdie estetiese "Reis-kwitansie" op Instagram Story of X!',
+                saveImage: 'Stoor Beeld', chooseVibe: 'Kies Byskrif-vibe', genCaption: 'Maak Virale Byskrif',
+                captionPlaceholder: 'Byskrif sal hier verskyn...',
                 vibeFlex: '✨ Flex (Insta)', vibeFlexDesc: 'Kort, esteties, koel',
                 vibeStory: '🧵 Storytime (X)', vibeStoryDesc: 'Boeiend, draad-styl',
                 vibeWitty: '😎 Geestig/Snaaks', vibeWittyDesc: 'Ontspanne, bietjie geestig',
                 vibeHealing: '🍃 Healing (Sag)', vibeHealingDesc: 'Diep, emosioneel, sag',
-                genVisual: 'Maak Visual...', receiptItinerary: 'Reisstrokie', receiptDate: 'Datum', receiptRef: 'Verw Nr', receiptCost: 'KOSTE',
-                receiptQty: 'HPR', receiptDest: 'BESTEMMING / AKTIWITEIT',
-                receiptThanks: 'Dankie!', receiptService: 'DIENS',
-                estBiayaLabel: 'BERAAMDE KOSTE', estBiayaDesc: 'Per persoon (Kaartjies + Kos)', openMapsBtn: 'MAAK GOOGLE MAPS OOP'
+                genVisual: 'Maak Visual...', receiptItinerary: 'Reisstrokie',
+                receiptDate: 'Datum', receiptRef: 'Verw Nr', receiptCost: 'KOSTE', receiptQty: 'HPR',
+                receiptDest: 'BESTEMMING / AKTIWITEIT', receiptThanks: 'Dankie!', receiptService: 'DIENS',
+                estBiayaLabel: 'BERAAMDE KOSTE', estBiayaDesc: 'Per persoon (Kaartjies + Kos)', openMapsBtn: 'MAAK GOOGLE MAPS OOP',
+                summaryTrip: 'Reis Opsomming', areYouReady: 'Gereed vir die pad?', totalStops: 'Totale Punte', travelMode: 'Mode',
+                modeDriving: 'Motor', modeMotorcycle: 'Motorfiets', modeWalking: 'Stap',
+                userLocation: 'JOU LIGGING', startingPoint: 'Vertrekpunt',
+                weatherPrep: 'Weer Voorbereiding',
+                weatherAdvice: 'Swaar reën? Maak seker ruitveërs werk goed. Gaan banddruk na om aquaplaning te vermy, en hou afstand.',
+                editRouteAgain: 'WYSIG ROETE WEER', editRouteTitle: 'Stel roete terug / Wysig',
+                editRouteSub: 'Het jy ekstra versoeke? Laat die AI dit aanpas.',
+                extraRequest: 'Ekstra Versoek', socialLinks: 'Sosiale Skakels (Opsioneel)',
+                keepRecommendations: 'Hou huidige aanbevelings',
+                keepRecsDesc: 'Indien gemerk, sal die AI probeer om voorheen gekose plekke in te sluit.',
+                cancel: 'KANSELLEER', buildNewRoute: 'BOU NUWE ROETE',
+                editRoutePlaceholder: 'Bv: Besoek my gunsteling plekke, of vind \'n hotel met \'n swembad...',
+                socialLinksPlaceholder: 'https://www.instagram.com/p/... of TikTok-skakel'
             },
             ar: {
-                regGiftLabel: 'هدية خاصة',
-                regGift: 'احصل على 7 أرصدة مجانية عند التسجيل لأول مرة',
-                routeBack: 'رجوع', routeTranslateLabel: 'مسار مختار', routeStartLoc: 'نقطة الانطلاق', routeFound: 'تم تحديد الموقع', routeGoBtn: 'مستعد للانطلاق!',
+                regGiftLabel: 'هدية خاصة', regGift: 'احصل على 7 أرصدة مجانية عند التسجيل لأول مرة',
+                routeBack: 'رجوع', routeTranslateLabel: 'مسار مختار', routeStartLoc: 'نقطة الانطلاق',
+                routeFound: 'تم تحديد الموقع (مستعد!)', routeGoBtn: 'مستعد للانطلاق!',
                 shareTitle: 'مشاركة 🚀', tabVisual: 'إيصال بصري', tabCaption: 'تسمية توضيحية',
-                receiptDesc: 'شارك هذا "إيصال السفر" الجمالي على انستقرام أو X!', saveImage: 'حفظ الصورة',
-                chooseVibe: 'اختر المود', genCaption: 'توليد التسمية', captionPlaceholder: 'ستظهر التسمية هنا...',
+                receiptDesc: 'شارك هذا "إيصال السفر" الجمالي على انستقرام أو X!',
+                saveImage: 'حفظ الصورة', chooseVibe: 'اختر المود', genCaption: 'توليد التسمية',
+                captionPlaceholder: 'ستظهر التسمية هنا...',
                 vibeFlex: '✨ استعراض (Insta)', vibeFlexDesc: 'قصير، جمالي، رائع',
                 vibeStory: '🧵 قصة (X)', vibeStoryDesc: 'جذاب، أسلوب ثريد',
                 vibeWitty: '😎 فكاهي', vibeWittyDesc: 'مسترخ، مضحك قليلاً',
                 vibeHealing: '🍃 استرخاء (ناعم)', vibeHealingDesc: 'عميق، عاطفي، ناعم',
-                genVisual: 'جاري التوليد البصري...', receiptItinerary: 'قسيمة المسار', receiptDate: 'التاريخ', receiptRef: 'رقم المرجع', receiptCost: 'التكلفة',
-                receiptQty: 'الكمية', receiptDest: 'الوجهة / النشاط',
-                receiptThanks: 'شكراً لك!', receiptService: 'خدمة',
-                estBiayaLabel: 'التكلفة التقديرية', estBiayaDesc: 'للشخص الواحدة (تذاكر + طعام)', openMapsBtn: 'فتح خرائط جوجل'
+                genVisual: 'جاري التوليد البصري...', receiptItinerary: 'قسيمة المسار',
+                receiptDate: 'التاريخ', receiptRef: 'رقم المرجع', receiptCost: 'التكلفة', receiptQty: 'الكمية',
+                receiptDest: 'الوجهة / النشاط', receiptThanks: 'شكراً لك!', receiptService: 'خدمة',
+                estBiayaLabel: 'التكلفة التقديرية', estBiayaDesc: 'للشخص الواحدة (تذاكر + طعام)', openMapsBtn: 'فتح خرائط جوجل',
+                summaryTrip: 'ملخص الرحلة', areYouReady: 'جاهز للانطلاق؟', totalStops: 'إجمالي النقاط', travelMode: 'النمط',
+                modeDriving: 'سيارة', modeMotorcycle: 'دراجة نارية', modeWalking: 'مشياً',
+                userLocation: 'موقعك', startingPoint: 'نقطة الانطلاق',
+                weatherPrep: 'الاستعداد للطقس',
+                weatherAdvice: 'مطر غزير؟ تأكد من عمل المساحات بشكل جيد. افحص ضغط الإطارات وتجنب الانزلاق المائي، وحافظ على مسافة آمنة.',
+                editRouteAgain: 'تعديل المسار مرة أخرى', editRouteTitle: 'إعادة ضبط / تعديل المسار',
+                editRouteSub: 'هل لديك طلبات إضافية؟ دع الذكاء الاصطناعي يضبطها.',
+                extraRequest: 'طلب إضافي', socialLinks: 'روابط التواصل الاجتماعي (اختياري)',
+                keepRecommendations: 'الاحتفاظ بالتوصيات الحالية',
+                keepRecsDesc: 'إذا تم تحديده، سيحاول الذكاء الاصطناعي تضمين الأماكن المختارة مسبقاً.',
+                cancel: 'إلغاء', buildNewRoute: 'إنشاء مسار جديد',
+                editRoutePlaceholder: 'مثال: زيارة أماكني المفضلة، أو البحث عن فندق به مسبح...',
+                socialLinksPlaceholder: 'رابط انستقرام أو تيك توك'
             }
         };
 
@@ -2072,11 +2143,13 @@
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (dict[key]) {
-                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                        el.placeholder = dict[key];
-                    } else {
-                        el.innerText = dict[key];
-                    }
+                    el.innerText = dict[key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (dict[key]) {
+                    el.placeholder = dict[key];
                 }
             });
             if (lang === 'ar') {
