@@ -247,49 +247,49 @@ fn format_currency_localized(amount: f64, lang: &str) -> String {
     let amount_int = amount as i64;
     match lang {
         "ja" => match amount_int {
-            15000 => "¥150",
-            49000 => "¥500",
+            15000 => "¥150".to_string(),
+            49000 => "¥500".to_string(),
             _ => format!("¥{}", amount_int / 100)
-        }.to_string(),
+        },
         "en" => match amount_int {
-            15000 => "$0.99",
-            49000 => "$3.99",
+            15000 => "$0.99".to_string(),
+            49000 => "$3.99".to_string(),
             _ => format!("${:.2}", amount / 15000.0)
-        }.to_string(),
+        },
         "ko" => match amount_int {
-            15000 => "₩1,300",
-            49000 => "₩4,500",
+            15000 => "₩1,300".to_string(),
+            49000 => "₩4,500".to_string(),
             _ => format!("₩{}", amount_int / 10)
-        }.to_string(),
+        },
         "zh" => match amount_int {
-            15000 => "¥7",
-            49000 => "¥22",
+            15000 => "¥7".to_string(),
+            49000 => "¥22".to_string(),
             _ => format!("¥{}", (amount / 2000.0) as i64)
-        }.to_string(),
+        },
         "ru" => match amount_int {
-            15000 => "100 ₽",
-            49000 => "350 ₽",
+            15000 => "100 ₽".to_string(),
+            49000 => "350 ₽".to_string(),
             _ => format!("{} ₽", (amount / 150.0) as i64)
-        }.to_string(),
+        },
         "nl" => match amount_int {
-            15000 => "€1,00",
-            49000 => "€3,50",
+            15000 => "€1,00".to_string(),
+            49000 => "€3,50".to_string(),
             _ => format!("€{:.2}", amount / 15000.0).replace(".", ",")
-        }.to_string(),
+        },
         "af" => match amount_int {
-            15000 => "R20",
-            49000 => "R75",
+            15000 => "R20".to_string(),
+            49000 => "R75".to_string(),
             _ => format!("R{}", (amount / 750.0) as i64)
-        }.to_string(),
+        },
         "ar" => match amount_int {
-            15000 => "٤ ر.س",
-            49000 => "١٥ ر.س",
+            15000 => "٤ ر.س".to_string(),
+            49000 => "١٥ ر.س".to_string(),
             _ => format!("{} SAR", (amount / 4000.0) as i64)
-        }.to_string(),
+        },
         _ => match amount_int {
-            15000 => "Rp 15rb",
-            49000 => "Rp 49rb",
+            15000 => "Rp 15rb".to_string(),
+            49000 => "Rp 49rb".to_string(),
             _ => format!("Rp {}", amount_int)
-        }.to_string(),
+        },
     }
 }
