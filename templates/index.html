@@ -156,11 +156,11 @@
 
     <!-- Navbar -->
     <nav
-        class="w-full bg-slate-50/80 backdrop-blur-md border-b border-slate-200/50 dark:bg-[#030712]/80 dark:border-slate-800/50 flex justify-between items-center py-4 px-6 md:px-8 sticky top-0 z-50 transition-colors">
+        class="w-full bg-slate-50/80 backdrop-blur-md border-b border-slate-200/50 dark:bg-[#030712]/80 dark:border-slate-800/50 flex justify-between items-center py-3 sm:py-4 px-4 sm:px-6 md:px-8 sticky top-0 z-50 transition-colors">
         <!-- Logo -->
-        <a href="/" class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2 sm:gap-3">
             <div
-                class="w-10 h-10 rounded-[12px] bg-gradient-to-tr from-violet-600 via-rose-500 to-amber-500 shrink-0 p-[2px]">
+                class="w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] bg-gradient-to-tr from-violet-600 via-rose-500 to-amber-500 shrink-0 p-[2px]">
                 <div
                     class="w-full h-full bg-[#030712] rounded-[10px] flex items-center justify-center relative overflow-hidden">
                     <div class="absolute inset-0 flex items-center justify-center">
@@ -170,19 +170,19 @@
                 </div>
             </div>
             <div class="flex flex-col">
-                <span class="text-xl font-black text-slate-900 dark:text-white leading-none tracking-tight">Ulyn
+                <span class="text-base sm:text-xl font-black text-slate-900 dark:text-white leading-none tracking-tight">Ulyn
                     AI</span>
-                <span class="text-[9px] font-black text-rose-500 tracking-widest mt-0.5 uppercase">AI TRIP
+                <span class="hidden md:block text-[9px] font-black text-rose-500 tracking-widest mt-0.5 uppercase">AI TRIP
                     PLANNER</span>
             </div>
         </a>
 
         <!-- Right Side -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1 sm:gap-3">
             <!-- History Button -->
             <div class="relative">
                 <button type="button" id="historyNavBtn" onclick="toggleHistoryPanel()"
-                    class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer relative">
+                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer relative">
                     <i class="fas fa-history text-sm"></i>
                     {% if history.len() > 0 %}
                     <span
@@ -275,12 +275,12 @@
             </div>
 
             <button type="button" id="themeToggleBtn" onclick="toggleTheme()"
-                class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
+                class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
                 <i class="fas fa-moon" id="themeIcon"></i>
             </button>
             <div class="relative">
                 <button type="button" id="langToggleBtn" onclick="toggleLangDropdown()"
-                    class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
+                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
                     <span id="activeLangFlag" class="text-sm">🇮🇩</span>
                 </button>
                 <!-- Language Dropdown -->
@@ -331,7 +331,7 @@
                 {% match user %}
                 {% when Some with (u) %}
                 <button type="button" id="userMenuBtn" onclick="toggleUserMenu()"
-                    class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm overflow-hidden hover:scale-105 transition-transform cursor-pointer">
+                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm overflow-hidden hover:scale-105 transition-transform cursor-pointer">
                     {% if u.picture.is_some() %}
                     <img src="{{ u.picture.as_ref().unwrap() }}" alt="{{ u.name }}" class="w-full h-full object-cover">
                     {% else %}
@@ -362,7 +362,7 @@
                 </div>
                 {% when None %}
                 <a href="/auth/google"
-                    class="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-2">
+                    class="px-2 py-1.5 sm:px-5 sm:py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-1.5 sm:gap-2">
                     <i class="fab fa-google"></i>
                     <span class="hidden sm:inline">Login</span>
                 </a>
@@ -618,7 +618,8 @@
                 {% match user %}
                 {% when Some with (u) %}
                 <button hx-post="/api/checkout"
-                    hx-vals='js:{"tier": "basic_pass", "amount": 15000, "lang": localStorage.getItem("ulyn_lang") || "id"}'
+                    hx-vals='js:{"tier": "basic_pass", "amount": 15000, "lang": localStorage.getItem("language") || "id"}'
+                    onclick="showRedirectModal()"
                     class="text-left bg-white/70 dark:bg-slate-800/60 backdrop-blur-md p-8 rounded-[32px] border border-white dark:border-slate-700 shadow-xl shadow-indigo-900/5 dark:shadow-none hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-400 transition-all duration-300 relative overflow-hidden group">
                     <div
                         class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-bl-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-colors">
@@ -637,7 +638,7 @@
                     </div>
                 </button>
                 {% when None %}
-                <button onclick="window.location.href='/auth/google'"
+                <button onclick="showRedirectModal(); setTimeout(() => window.location.href='/auth/google', 100)"
                     class="text-left bg-white/70 dark:bg-slate-800/60 backdrop-blur-md p-8 rounded-[32px] border border-white dark:border-slate-700 shadow-xl shadow-indigo-900/5 dark:shadow-none hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-400 transition-all duration-300 relative overflow-hidden group">
                     <div
                         class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-bl-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-colors">
@@ -660,7 +661,8 @@
                 {% match user %}
                 {% when Some with (u) %}
                 <button hx-post="/api/checkout"
-                    hx-vals='js:{"tier": "pro_pass", "amount": 49000, "lang": localStorage.getItem("ulyn_lang") || "id"}'
+                    hx-vals='js:{"tier": "pro_pass", "amount": 49000, "lang": localStorage.getItem("language") || "id"}'
+                    onclick="showRedirectModal()"
                     class="text-left bg-gradient-to-br from-rose-500 to-amber-500 p-8 rounded-[32px] border border-white/20 shadow-xl shadow-rose-900/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-rose-500/30 transition-all duration-300 relative overflow-hidden group">
                     <div
                         class="absolute top-0 right-4 bg-white/20 backdrop-blur-sm text-white text-[10px] font-black px-4 py-2 rounded-b-xl uppercase tracking-widest border-x border-b border-white/20">
@@ -680,7 +682,7 @@
                     </div>
                 </button>
                 {% when None %}
-                <button onclick="window.location.href='/auth/google'"
+                <button onclick="showRedirectModal(); setTimeout(() => window.location.href='/auth/google', 100)"
                     class="text-left bg-gradient-to-br from-rose-500 to-amber-500 p-8 rounded-[32px] border border-white/20 shadow-xl shadow-rose-900/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-rose-500/30 transition-all duration-300 relative overflow-hidden group">
                     <div
                         class="absolute top-0 right-4 bg-white/20 backdrop-blur-sm text-white text-[10px] font-black px-4 py-2 rounded-b-xl uppercase tracking-widest border-x border-b border-white/20">
@@ -1860,6 +1862,62 @@
             }
         };
 
+        const REDIRECT_TRANSLATIONS = {
+            id: {
+                title: "Menyiapkan Pembayaran",
+                desc: "Kamu akan segera dialihkan ke gerbang pembayaran aman Mayar."
+            },
+            en: {
+                title: "Preparing Payment",
+                desc: "You will be redirected to the secure Mayar payment gateway shortly."
+            },
+            ja: {
+                title: "お支払い準備中",
+                desc: "まもなく安全なMayar決済ゲートウェイにリダイレクトされます。"
+            },
+            ko: {
+                title: "결제 준비 중",
+                desc: "곧 안전한 Mayar 결제 게이트웨이로 리다이렉트됩니다."
+            },
+            zh: {
+                title: "正在准备付款",
+                desc: "您将很快被重定向到安全的 Mayar 支付网关。"
+            },
+            nl: {
+                title: "Betaling Voorbereiden",
+                desc: "U wordt binnenkort doorgestuurd naar de veilige Mayar-betalingsgateway."
+            },
+            af: {
+                title: "Betaling word Voorberei",
+                desc: "Jy sal binnekort na die veilige Mayar-betalingspoort herlei word."
+            },
+            ar: {
+                title: "جاري تجهيز الدفع",
+                desc: "سيتم تحويلك إلى بوابة دفع Mayar الآمنة قريباً."
+            },
+            ru: {
+                title: "Подготовка платежа",
+                desc: "Вы будете перенаправлены на безопасный платежный шлюз Mayar в ближайшее время."
+            }
+        };
+
+        function showRedirectModal() {
+            const lang = localStorage.getItem('language') || 'id';
+            const t = REDIRECT_TRANSLATIONS[lang] || REDIRECT_TRANSLATIONS.id;
+            
+            const modal = document.getElementById('redirectModal');
+            const title = document.getElementById('redirectTitle');
+            const desc = document.getElementById('redirectDesc');
+
+            if (title) title.innerText = t.title;
+            if (desc) desc.innerText = t.desc;
+
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
         function showProcessingModal() {
             const lang = localStorage.getItem('language') || 'id';
             const t = PROCESSING_TRANSLATIONS[lang] || PROCESSING_TRANSLATIONS.id;
@@ -1972,6 +2030,29 @@
 
             <p class="text-[9px] md:text-[11px] text-slate-500 dark:text-slate-400 font-bold tracking-[0.2em] uppercase transition-opacity duration-300 min-h-[1.5em]"
                 id="loadingPhase">MENGUMPULKAN DATA LOKASI...</p>
+        </div>
+    </div>
+    <!-- Redirect Modal -->
+    <div id="redirectModal" class="fixed inset-0 z-[1000] hidden items-center justify-center">
+        <div class="absolute inset-0 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl"></div>
+        <div class="relative z-10 flex flex-col items-center text-center px-6 max-w-lg w-full">
+            <div class="relative mb-10">
+                <div class="absolute inset-0 bg-indigo-500 rounded-full blur-3xl animate-pulse opacity-20"></div>
+                <div
+                    class="w-24 h-24 rounded-3xl bg-white dark:bg-slate-900 shadow-2xl flex items-center justify-center border border-slate-100 dark:border-slate-800 animate-bounce-slow">
+                    <i class="fas fa-money-bill-wave text-4xl text-indigo-500"></i>
+                </div>
+            </div>
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight" id="redirectTitle">
+                Menyiapkan Pembayaran</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-[280px] leading-relaxed" id="redirectDesc">
+                Kamu akan segera dialihkan ke gerbang pembayaran aman Mayar.
+            </p>
+            <div class="mt-8 flex gap-1">
+                <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay: 0.1s"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay: 0.3s"></div>
+            </div>
         </div>
     </div>
 </body>

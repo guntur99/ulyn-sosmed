@@ -363,7 +363,7 @@ pub async fn get_quota_status(
             receipt_limit: latest.0,
         });
     } else if let Some(gid) = guest_id {
-        let mut conn = redis.get_multiplexed_tokio_connection().await
+        let conn = redis.get_multiplexed_tokio_connection().await
             .map_err(|e| format!("Redis connection error: {}", e))?;
 
         let get_usage = |f: &str| {
