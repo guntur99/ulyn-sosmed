@@ -600,19 +600,36 @@ pub async fn payment_callback(
                     _ => None,
                 };
 
-                // 2. Determine Credits
-                let credits_to_add = match topup.tier.as_str() {
+                // 2. Determine Credits (Case-insensitive matching)
+                let tier_normalized = topup.tier.to_lowercase();
+                let credits_to_add = match tier_normalized.as_str() {
                     "pro_pass" => 60,
                     "basic_pass" => 10,
-                    _ => 0,
+                    _ => {
+                        tracing::warn!("Webhook: Unknown tier detected: '{}'", topup.tier);
+                        0
+                    }
                 };
 
+                tracing::info!("Webhook: Processing tier: '{}', adding {} credits", tier_normalized, credits_to_add);
+
                 // 3. Update User
+                // Logic: Only update tier to the new one if the current tier is NOT 'pro_pass'
+                // Increment all three feature credit buckets.
                 let user_update = sqlx::query(
-                    "UPDATE users SET credits = credits + $1, tier = $2, updated_at = NOW() WHERE id = $3"
+                    "UPDATE users SET 
+                        credits_route = credits_route + $1, 
+                        credits_caption = credits_caption + $1, 
+                        credits_receipt = credits_receipt + $1, 
+                        tier = CASE 
+                            WHEN tier = 'pro_pass' THEN 'pro_pass' 
+                            ELSE $2 
+                        END, 
+                        updated_at = NOW() 
+                    WHERE id = $3"
                 )
                 .bind(credits_to_add)
-                .bind(&topup.tier)
+                .bind(&tier_normalized)
                 .bind(topup.user_id)
                 .execute(&mut *tx)
                 .await;

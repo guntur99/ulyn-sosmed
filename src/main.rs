@@ -123,6 +123,8 @@ async fn main() {
     // build our application with a route
     let app = Router::new()
         .nest_service("/static", tower_http::services::ServeDir::new("static"))
+        .route_service("/robots.txt", tower_http::services::ServeFile::new("static/robots.txt"))
+        .route_service("/sitemap.xml", tower_http::services::ServeFile::new("static/sitemap.xml"))
         .route("/", get(handlers::root))
         .route("/route/{id}", get(handlers::route_handler))
         .route("/api/generate", post(handlers::generate))

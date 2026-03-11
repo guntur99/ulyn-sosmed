@@ -65,8 +65,13 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::Error> {
     sqlx::query(r#"
         DO $$
         BEGIN
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='route_history' AND column_name='user_id') THEN
-                ALTER TABLE route_history ADD COLUMN user_id TEXT NOT NULL DEFAULT 'global';
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='credits_route') THEN
+                ALTER TABLE users ADD COLUMN credits_route INTEGER NOT NULL DEFAULT 7;
+                ALTER TABLE users ADD COLUMN credits_caption INTEGER NOT NULL DEFAULT 7;
+                ALTER TABLE users ADD COLUMN credits_receipt INTEGER NOT NULL DEFAULT 7;
+                
+                -- Migrate existing credits to new columns
+                UPDATE users SET credits_route = credits, credits_caption = credits, credits_receipt = credits;
             END IF;
         END
         $$;
@@ -153,6 +158,9 @@ pub struct User {
     pub picture: Option<String>,
     pub google_id: Option<String>,
     pub credits: i32,
+    pub credits_route: i32,
+    pub credits_caption: i32,
+    pub credits_receipt: i32,
     pub tier: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -261,12 +269,18 @@ pub async fn check_quota(
     feature: FeatureType,
 ) -> Result<bool, String> {
     if let Some(u) = user {
-        let (credits,): (i32,) = sqlx::query_as("SELECT credits FROM users WHERE id = $1")
+        let col = match feature {
+            FeatureType::Route => "credits_route",
+            FeatureType::Caption => "credits_caption",
+            FeatureType::Receipt => "credits_receipt",
+        };
+        let query = format!("SELECT {} FROM users WHERE id = $1", col);
+        let row: (i32,) = sqlx::query_as(&query)
             .bind(u.id)
             .fetch_one(pool)
             .await
             .map_err(|e| format!("DB Error: {}", e))?;
-        return Ok(credits > 0);
+        return Ok(row.0 > 0);
     } else if let Some(gid) = guest_id {
         let feature_str = match feature {
             FeatureType::Route => "route",
@@ -292,7 +306,13 @@ pub async fn consume_quota(
     feature: FeatureType,
 ) -> Result<bool, String> {
     if let Some(u) = user {
-        sqlx::query("UPDATE users SET credits = credits - 1 WHERE id = $1 AND credits > 0")
+        let col = match feature {
+            FeatureType::Route => "credits_route",
+            FeatureType::Caption => "credits_caption",
+            FeatureType::Receipt => "credits_receipt",
+        };
+        let query = format!("UPDATE users SET {0} = {0} - 1 WHERE id = $1 AND {0} > 0", col);
+        sqlx::query(&query)
             .bind(u.id)
             .execute(pool)
             .await
@@ -348,19 +368,19 @@ pub async fn get_quota_status(
     guest_id: Option<&str>,
 ) -> Result<QuotaStatus, String> {
     if let Some(u) = user {
-        let latest: (i32,) = sqlx::query_as("SELECT credits FROM users WHERE id = $1")
+        let latest: (i32, i32, i32) = sqlx::query_as("SELECT credits_route, credits_caption, credits_receipt FROM users WHERE id = $1")
             .bind(u.id)
             .fetch_one(pool)
             .await
             .map_err(|e| format!("DB query error: {}", e))?;
-
+        
         return Ok(QuotaStatus {
             route_used: 0, 
             route_limit: latest.0,
             caption_used: 0,
-            caption_limit: latest.0,
+            caption_limit: latest.1,
             receipt_used: 0,
-            receipt_limit: latest.0,
+            receipt_limit: latest.2,
         });
     } else if let Some(gid) = guest_id {
         let conn = redis.get_multiplexed_tokio_connection().await
