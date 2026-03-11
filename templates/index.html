@@ -615,11 +615,9 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 md:px-0">
-                {% match user %}
-                {% when Some with (u) %}
                 <button hx-post="/api/checkout"
                     hx-vals='js:{"tier": "basic_pass", "amount": 15000, "lang": localStorage.getItem("ulyn_lang") || "id"}'
-                    class="text-left bg-white/70 dark:bg-slate-800/60 backdrop-blur-md p-8 rounded-[32px] border border-white dark:border-slate-700 shadow-xl shadow-indigo-900/5 dark:shadow-none hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-400 transition-all duration-300 relative overflow-hidden group">
+                    class="text-left bg-white/70 dark:bg-slate-800/60 backdrop-blur-md p-8 rounded-[32px] border border-white dark:border-slate-700 shadow-xl shadow-indigo-900/5 dark:shadow-none hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-400 transition-all duration-300 relative overflow-hidden group cursor-pointer">
                     <div
                         class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-bl-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-colors">
                     </div>
@@ -636,32 +634,10 @@
                         <span data-i18n="topupBtn">Topup Sekarang</span> <i class="fas fa-arrow-right"></i>
                     </div>
                 </button>
-                {% when None %}
-                <button onclick="window.location.href='/auth/google'"
-                    class="text-left bg-white/70 dark:bg-slate-800/60 backdrop-blur-md p-8 rounded-[32px] border border-white dark:border-slate-700 shadow-xl shadow-indigo-900/5 dark:shadow-none hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-400 transition-all duration-300 relative overflow-hidden group">
-                    <div
-                        class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-bl-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-colors">
-                    </div>
-                    <div
-                        class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-500 rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10 shadow-sm border border-indigo-100 dark:border-indigo-500/20 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-ticket-alt"></i>
-                    </div>
-                    <h3 class="font-black text-slate-900 dark:text-white text-2xl mb-1">Basic Pass</h3>
-                    <p class="text-xl font-bold text-indigo-500 dark:text-indigo-400 mb-4">Rp 15.000</p>
-                    <p data-i18n="basicDesc" class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-6">Cocok
-                        untuk kebutuhan personal sesekali. Dapatkan 10x Generate rute &amp; itinerary keren.</p>
-                    <div
-                        class="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-500 transition-colors flex items-center gap-2">
-                        <span data-i18n="topupBtn">Topup Sekarang</span> <i class="fas fa-arrow-right"></i>
-                    </div>
-                </button>
-                {% endmatch %}
 
-                {% match user %}
-                {% when Some with (u) %}
                 <button hx-post="/api/checkout"
                     hx-vals='js:{"tier": "pro_pass", "amount": 49000, "lang": localStorage.getItem("ulyn_lang") || "id"}'
-                    class="text-left bg-gradient-to-br from-rose-500 to-amber-500 p-8 rounded-[32px] border border-white/20 shadow-xl shadow-rose-900/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-rose-500/30 transition-all duration-300 relative overflow-hidden group">
+                    class="text-left bg-gradient-to-br from-rose-500 to-amber-500 p-8 rounded-[32px] border border-white/20 shadow-xl shadow-rose-900/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-rose-500/30 transition-all duration-300 relative overflow-hidden group cursor-pointer">
                     <div
                         class="absolute top-0 right-4 bg-white/20 backdrop-blur-sm text-white text-[10px] font-black px-4 py-2 rounded-b-xl uppercase tracking-widest border-x border-b border-white/20">
                         <span data-i18n="bestValue">Best Value</span>
@@ -679,27 +655,6 @@
                         <span data-i18n="joinProBtn">Join Pro Sekarang</span> <i class="fas fa-arrow-right"></i>
                     </div>
                 </button>
-                {% when None %}
-                <button onclick="window.location.href='/auth/google'"
-                    class="text-left bg-gradient-to-br from-rose-500 to-amber-500 p-8 rounded-[32px] border border-white/20 shadow-xl shadow-rose-900/20 hover:-translate-y-2 hover:shadow-2xl hover:shadow-rose-500/30 transition-all duration-300 relative overflow-hidden group">
-                    <div
-                        class="absolute top-0 right-4 bg-white/20 backdrop-blur-sm text-white text-[10px] font-black px-4 py-2 rounded-b-xl uppercase tracking-widest border-x border-b border-white/20">
-                        <span data-i18n="bestValue">Best Value</span>
-                    </div>
-
-                    <div
-                        class="w-16 h-16 bg-white/20 backdrop-blur-md text-white rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10 shadow-sm border border-white/20 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <h3 class="font-black text-white text-2xl mb-1">Pro Pass</h3>
-                    <p class="text-xl font-bold text-rose-100 mb-4">Rp 49.000</p>
-                    <p data-i18n="proDesc" class="text-sm text-rose-50/90 font-medium mb-6">Akses tanpa batas untuk para
-                        traveler. Bebas limit rute dan prioritas AI antrian.</p>
-                    <div class="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                        <span data-i18n="joinProBtn">Join Pro Sekarang</span> <i class="fas fa-arrow-right"></i>
-                    </div>
-                </button>
-                {% endmatch %}
             </div>
 
             <p
