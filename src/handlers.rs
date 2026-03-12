@@ -596,8 +596,18 @@ pub async fn payment_callback(
 
                 // Fetch User for email
                 let user = match db::find_user_by_id(&state.db, topup.user_id).await {
-                    Ok(Some(u)) => Some(u),
-                    _ => None,
+                    Ok(Some(u)) => {
+                        tracing::info!("Webhook: Found user {} for email", u.email);
+                        Some(u)
+                    },
+                    Ok(None) => {
+                        tracing::warn!("Webhook: User {} not found for email", topup.user_id);
+                        None
+                    },
+                    Err(e) => {
+                        tracing::error!("Webhook: Error fetching user {}: {}", topup.user_id, e);
+                        None
+                    }
                 };
 
                 // 2. Determine Credits (Case-insensitive matching)
@@ -615,9 +625,11 @@ pub async fn payment_callback(
 
                 // 3. Update User
                 // Logic: Only update tier to the new one if the current tier is NOT 'pro_pass'
-                // Increment all three feature credit buckets.
+                // Increment all three feature credit buckets AND legacy credits column.
+                tracing::info!("Webhook: Updating credits for user {}", topup.user_id);
                 let user_update = sqlx::query(
                     "UPDATE users SET 
+                        credits = credits + $1,
                         credits_route = credits_route + $1, 
                         credits_caption = credits_caption + $1, 
                         credits_receipt = credits_receipt + $1, 
@@ -664,10 +676,11 @@ pub async fn payment_callback(
 
                 // 5. Send Email Notification
                 if let Some(u) = user {
+                    tracing::info!("Webhook: Sending success email to {}", u.email);
                     let email_body = email_templates::get_topup_success_email(
                         &u.name,
                         &topup.amount.to_string(),
-                        &topup.tier,
+                        &tier_normalized, // Used normalized tier for matching
                         &topup.reference,
                         payment_channel.unwrap_or("Mayar"),
                         user_lang.as_deref()
