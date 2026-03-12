@@ -500,15 +500,27 @@ pub async fn checkout(
     let u = user.unwrap();
     let customer_name = u.name.clone();
     let customer_email = u.email.clone();
-    let invoice_number = format!("ULYN-{}-{}", &u.id.to_string()[..4].to_uppercase(), payload.tier.to_uppercase());
+    
+    // Generate a UNIQUE invoice number to prevent duplicate key errors
+    let unique_suffix = uuid::Uuid::new_v4().to_string()[..4].to_uppercase();
+    let invoice_number = format!("ULYN-{}-{}-{}", 
+        &u.id.to_string()[..4].to_uppercase(), 
+        payload.tier.to_uppercase(),
+        unique_suffix
+    );
 
     // Record the topup attempt in database with language preference
     let payload_json = serde_json::json!({
         "lang": payload.lang.unwrap_or_else(|| "id".to_string())
     });
-    let _ = db::create_topup(&state.db, u.id, payload.amount, &payload.tier, &invoice_number, Some(&payload_json)).await;
+    
+    if let Err(e) = db::create_topup(&state.db, u.id, payload.amount, &payload.tier, &invoice_number, Some(&payload_json)).await {
+        tracing::error!("Failed to record topup intent: {}", e);
+        let headers = HeaderMap::new();
+        return (StatusCode::INTERNAL_SERVER_ERROR, headers, "Gagal memproses permintaan pembayaran").into_response();
+    }
 
-    let redirect_url = std::env::var("APP_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let redirect_url = std::env::var("APP_BASE_URL").unwrap_or_else(|_| "https://ulyn.pro".to_string());
     match mayar::create_invoice(&state.client, &customer_name, &customer_email, payload.amount, &invoice_number, &redirect_url).await {
         Ok(payment_url) => {
             let mut headers = HeaderMap::new();
