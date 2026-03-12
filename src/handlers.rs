@@ -597,15 +597,15 @@ pub async fn payment_callback(
                 // Fetch User for email
                 let user = match db::find_user_by_id(&state.db, topup.user_id).await {
                     Ok(Some(u)) => {
-                        tracing::info!("Webhook: Found user {} for email", u.email);
+                        tracing::info!("Webhook: Found user {} (ID: {}) for this topup", u.email, u.id);
                         Some(u)
                     },
                     Ok(None) => {
-                        tracing::warn!("Webhook: User {} not found for email", topup.user_id);
+                        tracing::warn!("Webhook: User ID {} not found in database!", topup.user_id);
                         None
                     },
                     Err(e) => {
-                        tracing::error!("Webhook: Error fetching user {}: {}", topup.user_id, e);
+                        tracing::error!("Webhook: DB Error fetching user {}: {}", topup.user_id, e);
                         None
                     }
                 };
@@ -792,8 +792,17 @@ pub async fn get_quota_status_handler(
         None
     };
 
+    if let Some(ref u) = db_user {
+        tracing::info!("Quota Check: Fetching status for user {}", u.email);
+    }
+
     match db::get_quota_status(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref()).await {
-        Ok(status) => (StatusCode::OK, Json(QuotaResponse { success: true, status: Some(status), error: None })),
+        Ok(status) => {
+            if let Some(ref u) = db_user {
+                tracing::info!("Quota Check: SUCCESS for {}. Route limit: {}", u.email, status.route_limit);
+            }
+            (StatusCode::OK, Json(QuotaResponse { success: true, status: Some(status), error: None }))
+        },
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(QuotaResponse { success: false, status: None, error: Some(e) })),
     }
 }
