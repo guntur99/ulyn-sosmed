@@ -506,7 +506,9 @@ pub async fn checkout(
     let payload_json = serde_json::json!({
         "lang": payload.lang.unwrap_or_else(|| "id".to_string())
     });
-    let _ = db::create_topup(&state.db, u.id, payload.amount, &payload.tier, &invoice_number, Some(&payload_json)).await;
+    if let Err(e) = db::create_topup(&state.db, u.id, payload.amount, &payload.tier, &invoice_number, Some(&payload_json)).await {
+        tracing::error!("Failed to create topup record for user {} ({}): {}", u.id, u.email, e);
+    }
 
     let redirect_url = std::env::var("APP_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
     match mayar::create_invoice(&state.client, &customer_name, &customer_email, payload.amount, &invoice_number, &redirect_url).await {
@@ -541,11 +543,33 @@ pub async fn payment_callback(
             // // SUCCESS: Consume Quota now
             // let _ = db::consume_quota(&state.db, &state.redis, db_user.as_ref(), guest_id.as_deref()).await;
             
-            // Return Redirect to route page or return HTML partial?
-            let mut reference = data.get("reference").and_then(|s| s.as_str()).unwrap_or("").to_string();
+            // 1. Extract Reference (Invoice Number)
+            // Check common Mayar payload fields for the reference
+            let mut reference = data.get("reference")
+                .and_then(|s| s.as_str())
+                .unwrap_or("")
+                .to_string();
+
             if reference.is_empty() {
+                // Check extra_data.reference
+                reference = data.get("extra_data")
+                    .and_then(|ed| ed.get("reference"))
+                    .and_then(|r| r.as_str())
+                    .unwrap_or("")
+                    .to_string();
+            }
+
+            if reference.is_empty() {
+                // Check external_id
+                reference = data.get("external_id")
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("")
+                    .to_string();
+            }
+
+            if reference.is_empty() {
+                // Check productDescription if others fail
                 if let Some(desc) = data.get("productDescription").and_then(|s| s.as_str()) {
-                    // Strip "Purchase " prefix if present
                     if desc.starts_with("Purchase ") {
                         reference = desc.replacen("Purchase ", "", 1).trim().to_string();
                     } else {
@@ -554,11 +578,14 @@ pub async fn payment_callback(
                 }
             }
 
+            // Normalize reference to uppercase for matching
+            reference = reference.to_uppercase();
+
             if status == "SUCCESS" || status == "PAID" {
                 tracing::info!("[WEBHOOK] Processing success for ref: '{}'", reference);
                 
                 if reference.is_empty() {
-                    tracing::warn!("Webhook: SUCCESS/PAID received but reference is missing in payload");
+                    tracing::warn!("Webhook: SUCCESS/PAID received but reference is missing in payload: {}", payload_val);
                     return StatusCode::BAD_REQUEST.into_response();
                 }
                 
@@ -574,11 +601,11 @@ pub async fn payment_callback(
                 let topup = match db::find_topup_by_reference(&state.db, &reference).await {
                     Ok(Some(t)) => t,
                     Ok(None) => {
-                        tracing::warn!("Webhook: Topup ref {} not found", reference);
+                        tracing::warn!("Webhook: Topup ref '{}' not found in database", reference);
                         return StatusCode::NOT_FOUND.into_response();
                     }
                     Err(e) => {
-                        tracing::error!("Webhook: DB error fetching topup: {}", e);
+                        tracing::error!("Webhook: DB error fetching topup '{}': {}", reference, e);
                         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
                     }
                 };
@@ -660,7 +687,8 @@ pub async fn payment_callback(
                     return StatusCode::INTERNAL_SERVER_ERROR.into_response();
                 }
 
-                tracing::info!("Webhook SUCCESS: Added {} credits to user {}", credits_to_add, topup.user_id);
+                let user_email = user.as_ref().map(|u| u.email.as_str()).unwrap_or("unknown");
+                tracing::info!("Webhook SUCCESS: Added {} credits to user {} ({}) for ref: '{}'", credits_to_add, topup.user_id, user_email, reference);
 
                 // 5. Send Email Notification
                 if let Some(u) = user {

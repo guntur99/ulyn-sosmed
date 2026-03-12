@@ -245,7 +245,7 @@ pub async fn get_route_history(pool: &PgPool, user_id: &str, limit: i32) -> Resu
 
 /// Find a topup record by reference
 pub async fn find_topup_by_reference(pool: &PgPool, reference: &str) -> Result<Option<Topup>, sqlx::Error> {
-    sqlx::query_as::<_, Topup>("SELECT * FROM topups WHERE reference = $1")
+    sqlx::query_as::<_, Topup>("SELECT * FROM topups WHERE UPPER(reference) = UPPER($1)")
         .bind(reference)
         .fetch_optional(pool)
         .await
