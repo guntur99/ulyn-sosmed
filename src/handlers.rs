@@ -500,7 +500,64 @@ pub async fn checkout(
     let u = user.unwrap();
     let customer_name = u.name.clone();
     let customer_email = u.email.clone();
-    
+
+    // --- New path: route through the central payment service (ulyn-pay) when
+    // ULYN_PAY_URL is configured. ulyn-pay owns the ledger and reference; the
+    // topup row here is created later by /internal/payments/fulfill, so we do
+    // NOT pre-create one. Flip the env to cut over; unset = legacy Mayar path.
+    let pay_url = std::env::var("ULYN_PAY_URL").unwrap_or_default();
+    if !pay_url.trim().is_empty() {
+        let slug = std::env::var("PAY_TENANT_SLUG").unwrap_or_else(|_| "pro".to_string());
+        let secret = std::env::var("PAY_FULFILL_SECRET").unwrap_or_default();
+        let redirect_url = std::env::var("APP_BASE_URL").unwrap_or_else(|_| "https://ulyn.pro".to_string());
+        let lang = payload.lang.clone().unwrap_or_else(|| "id".to_string());
+
+        let body = serde_json::json!({
+            "external_user_id": u.id.to_string(),
+            "amount": payload.amount,
+            "customer_name": customer_name,
+            "customer_email": customer_email,
+            "metadata": { "tier": payload.tier, "lang": lang },
+            "redirect_url": redirect_url,
+        });
+
+        let resp = state.client
+            .post(format!("{}/payments/create", pay_url.trim_end_matches('/')))
+            .header("X-Tenant-Id", &slug)
+            .header("X-Internal-Secret", &secret)
+            .json(&body)
+            .send()
+            .await;
+
+        return match resp {
+            Ok(r) if r.status().is_success() => {
+                let data: Value = r.json().await.unwrap_or_default();
+                match data.get("payment_url").and_then(|l| l.as_str()) {
+                    Some(link) => {
+                        let mut headers = HeaderMap::new();
+                        headers.insert("HX-Redirect", link.parse().unwrap());
+                        (StatusCode::OK, headers, "Redirecting to payment...").into_response()
+                    }
+                    None => {
+                        tracing::error!("ulyn-pay create: no payment_url in response: {:?}", data);
+                        (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), "Gagal membuat link pembayaran").into_response()
+                    }
+                }
+            }
+            Ok(r) => {
+                let st = r.status();
+                let txt = r.text().await.unwrap_or_default();
+                tracing::error!("ulyn-pay create failed ({}): {}", st, txt);
+                (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), "Gagal membuat link pembayaran").into_response()
+            }
+            Err(e) => {
+                tracing::error!("ulyn-pay create request error: {}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), "Gateway pembayaran tidak terjangkau").into_response()
+            }
+        };
+    }
+
+    // --- Legacy path: create the invoice directly via Mayar. ---
     // Generate a UNIQUE invoice number to prevent duplicate key errors
     let unique_suffix = uuid::Uuid::new_v4().to_string()[..4].to_uppercase();
     let invoice_number = format!("ULYN-{}-{}-{}", 
