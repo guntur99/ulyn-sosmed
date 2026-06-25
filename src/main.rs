@@ -10,6 +10,7 @@ use tokio::sync::RwLock;
 use std::time::Duration;
 
 mod handlers;
+mod fulfill;
 mod mayar;
 mod sumopod;
 mod harvester;
@@ -134,6 +135,9 @@ async fn main() {
         .route("/api/quota/consume", post(handlers::consume_quota_handler))
         .route("/api/checkout", post(handlers::checkout))
         .route("/api/payment/callback", post(handlers::payment_callback))
+        // Fulfillment callback from the central payment service (ulyn-pay),
+        // authenticated by PAY_FULFILL_SECRET inside the handler.
+        .route("/internal/payments/fulfill", post(fulfill::fulfill))
         .route("/auth/google", get(auth::google_login))
         .route("/auth/google/callback", get(auth::google_callback))
         .route("/auth/logout", get(auth::logout))
