@@ -75,11 +75,14 @@ async fn main() {
     }
 
     if !redis_connection_success {
-        panic!("DB: All Redis connection attempts failed. Please check your REDIS_URL/Redis status.");
-    }
-
-    if !redis_connection_success {
-        panic!("DB: All Redis connection attempts failed. Please check your REDIS_URL/Redis status.");
+        // Redis only backs quota/caching — NOT payments. Boot anyway so the HTTP
+        // server (including the /internal/payments/fulfill endpoint) stays up;
+        // Redis-backed features degrade until it recovers, instead of a Redis
+        // hiccup taking the whole service (and payments) down.
+        tracing::error!(
+            "DB: Redis unavailable after retries — starting WITHOUT a verified Redis connection. \
+             Check REDIS_URL (scheme rediss:// vs redis://, host/port). Redis-backed features may fail until it recovers."
+        );
     }
 
     // Run migrations with Retry Logic (Railway Proxy Resilience)
