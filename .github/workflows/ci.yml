@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+
+      # Gating checks: must pass to merge.
+      - name: cargo build
+        run: cargo build --verbose
+
+      - name: cargo test
+        run: cargo test --verbose
+
+      # Informational only: existing code isn't rustfmt-clean and clippy carries
+      # pre-existing warnings, so these don't block merges (yet).
+      - name: cargo fmt (informational)
+        run: cargo fmt --check
+        continue-on-error: true
+
+      - name: cargo clippy (informational)
+        run: cargo clippy --all-targets
+        continue-on-error: true
