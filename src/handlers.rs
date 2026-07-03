@@ -521,6 +521,11 @@ pub async fn checkout(
             "redirect_url": redirect_url,
         });
 
+        tracing::info!(
+            "ulyn-pay request: url={}/payments/create slug={} amount={} user={}",
+            pay_url.trim_end_matches('/'), slug, payload.amount as i64, customer_email
+        );
+
         let resp = state.client
             .post(format!("{}/payments/create", pay_url.trim_end_matches('/')))
             .header("X-Tenant-Id", &slug)
@@ -532,15 +537,21 @@ pub async fn checkout(
         return match resp {
             Ok(r) if r.status().is_success() => {
                 let data: Value = r.json().await.unwrap_or_default();
-                match data.get("payment_url").and_then(|l| l.as_str()) {
-                    Some(link) => {
+                // payment_url can be either a string or null in the response
+                let link = data.get("payment_url")
+                    .and_then(|l| l.as_str())
+                    .filter(|s| !s.is_empty());
+                match link {
+                    Some(url) => {
                         let mut headers = HeaderMap::new();
-                        headers.insert("HX-Redirect", link.parse().unwrap());
+                        headers.insert("HX-Redirect", url.parse().unwrap());
                         (StatusCode::OK, headers, "Redirecting to payment...").into_response()
                     }
                     None => {
                         tracing::error!("ulyn-pay create: no payment_url in response: {:?}", data);
-                        (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), "Gagal membuat link pembayaran").into_response()
+                        (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(),
+                            format!("Gagal membuat link pembayaran (payment_url kosong): {:?}", data)
+                        ).into_response()
                     }
                 }
             }
@@ -548,11 +559,15 @@ pub async fn checkout(
                 let st = r.status();
                 let txt = r.text().await.unwrap_or_default();
                 tracing::error!("ulyn-pay create failed ({}): {}", st, txt);
-                (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), "Gagal membuat link pembayaran").into_response()
+                (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(),
+                    format!("Gagal membuat link pembayaran ({st}): {txt}")
+                ).into_response()
             }
             Err(e) => {
                 tracing::error!("ulyn-pay create request error: {}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), "Gateway pembayaran tidak terjangkau").into_response()
+                (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(),
+                    format!("Gateway pembayaran tidak terjangkau: {e}")
+                ).into_response()
             }
         };
     }
