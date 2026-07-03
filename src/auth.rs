@@ -167,7 +167,7 @@ pub async fn google_callback(
     // Set session cookie (HttpOnly, SameSite=Lax, 7 days)
     let session_val = encode_session(&user);
     let cookie = format!(
-        "ulyn_session={}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800",
+        "ulyn_session={}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800",
         session_val
     );
 
