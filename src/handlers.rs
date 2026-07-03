@@ -514,7 +514,7 @@ pub async fn checkout(
 
         let body = serde_json::json!({
             "external_user_id": u.id.to_string(),
-            "amount": payload.amount,
+            "amount": payload.amount as i64,
             "customer_name": customer_name,
             "customer_email": customer_email,
             "metadata": { "tier": payload.tier, "lang": lang },
