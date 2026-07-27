@@ -58,7 +58,7 @@ pub fn get_topup_success_email(
 <body>
     <div class="wrapper">
         <div class="header">
-            <h1 style="margin:0">NGETRIP AI</h1>
+            <h1 style="margin:0">NGETRIP</h1>
             <p style="margin:5px 0 0 0; opacity:0.8">{brand_slogan}</p>
         </div>
         <div class="content">
@@ -80,7 +80,7 @@ pub fn get_topup_success_email(
             </div>
         </div>
         <div class="footer">
-            &copy; {year} NGETRIP AI • {brand_slogan}
+            &copy; {year} NGETRIP • {brand_slogan}
         </div>
     </div>
 </body>

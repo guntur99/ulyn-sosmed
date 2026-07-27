@@ -37,7 +37,7 @@ pub async fn send_html_email(state: Option<&crate::AppState>, to: &str, subject:
 async fn send_via_api(state: Option<&crate::AppState>, to: &str, subject: &str, html_content: &str, api_token: &str) -> Result<(), String> {
     tracing::info!("Attempting to send email via Mailtrap API to {}", to);
     let from_email = env::var("MAIL_FROM_ADDRESS").unwrap_or_else(|_| "team@ulyn.fun".to_string());
-    let from_name = env::var("MAIL_FROM_NAME").unwrap_or_else(|_| "Ngetrip AI".to_string());
+    let from_name = env::var("MAIL_FROM_NAME").unwrap_or_else(|_| "Ngetrip".to_string());
 
     let payload = MailtrapPayload {
         from: MailtrapAddress {
@@ -94,7 +94,7 @@ async fn send_via_smtp(to: &str, subject: &str, html_content: &str) -> Result<()
     let username = env::var("MAIL_USERNAME").map_err(|_| "MAIL_USERNAME not set")?;
     let password = env::var("MAIL_PASSWORD").map_err(|_| "MAIL_PASSWORD not set")?;
     let from_email = env::var("MAIL_FROM_ADDRESS").unwrap_or_else(|_| "team@ulyn.fun".to_string());
-    let from_name = env::var("MAIL_FROM_NAME").unwrap_or_else(|_| "Ngetrip AI".to_string());
+    let from_name = env::var("MAIL_FROM_NAME").unwrap_or_else(|_| "Ngetrip".to_string());
 
     tracing::info!("SMTP Config: host={}, port={}, user={}, from={}", server, port, username, from_email);
 
