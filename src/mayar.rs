@@ -25,7 +25,7 @@ pub async fn create_invoice(
         "items": [
             {
                 "name": format!("Package {}", reference),
-                "description": "Ulyn Sosmed Plan",
+                "description": "Ngetrip Sosmed Plan",
                 "quantity": 1,
                 "rate": amount
             }

@@ -771,15 +771,15 @@ pub async fn payment_callback(
                     );
                     
                     let subject = match user_lang.as_deref() {
-                        Some("id") => "Topup Berhasil - Ulyn AI",
-                        Some("ja") => "入金完了 - Ulyn AI",
-                        Some("ko") => "충전 성공 - Ulyn AI",
-                        Some("zh") => "充值成功 - Ulyn AI",
-                        Some("ru") => "Пополнение успешно - Ulyn AI",
-                        Some("nl") => "Opwaardering geslaagd - Ulyn AI",
-                        Some("af") => "Topup Suksesvol - Ulyn AI",
-                        Some("ar") => "تم الشحن بنجاح - Ulyn AI",
-                        _ => "Topup Successful - Ulyn AI",
+                        Some("id") => "Topup Berhasil - Ngetrip AI",
+                        Some("ja") => "入金完了 - Ngetrip AI",
+                        Some("ko") => "충전 성공 - Ngetrip AI",
+                        Some("zh") => "充值成功 - Ngetrip AI",
+                        Some("ru") => "Пополнение успешно - Ngetrip AI",
+                        Some("nl") => "Opwaardering geslaagd - Ngetrip AI",
+                        Some("af") => "Topup Suksesvol - Ngetrip AI",
+                        Some("ar") => "تم الشحن بنجاح - Ngetrip AI",
+                        _ => "Topup Successful - Ngetrip AI",
                     };
 
                     let res = mail::send_html_email(Some(&state), &u.email, subject, &email_body).await;
